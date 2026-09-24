@@ -10,6 +10,29 @@
 @import "./theme.css";
 @import "./swipe.css";
 
+[data-theme="sabor-brasa"] {
+  color-scheme: light;
+  --color-base-100: oklch(98% 0.008 70);
+  --color-base-200: oklch(95% 0.012 70);
+  --color-base-300: oklch(89% 0.018 65);
+  --color-base-content: oklch(20% 0.015 55);
+  --color-primary: oklch(67% 0.2 43);
+  --color-primary-content: oklch(98% 0.008 70);
+  --color-secondary: oklch(25% 0.02 48);
+  --color-secondary-content: oklch(98% 0.008 70);
+  --color-accent: oklch(57% 0.2 31);
+  --color-accent-content: oklch(98% 0.008 70);
+  --color-neutral: oklch(25% 0.02 48);
+  --color-neutral-content: oklch(98% 0.008 70);
+  --color-info: oklch(62% 0.15 245);
+  --color-success: oklch(61% 0.15 145);
+  --color-warning: oklch(76% 0.16 75);
+  --color-error: oklch(57% 0.22 28);
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.5rem;
+}
+
 html,
 body {
   font-family: "Inter", sans-serif;

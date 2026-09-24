@@ -1,7 +1,7 @@
+import logo from '@/assets/sabor-brasa-logo.png'
+
 export function Brand() {
   return (
-    <h1 className='text-xl text-slate-900 font-extrabold tracking-tight'>
-      <span className='text-primary'>JHP</span> Produtos
-    </h1>
+    <img src={logo} alt='Sabor & Brasa' className='h-10 w-auto max-w-36 object-contain' />
   )
 }

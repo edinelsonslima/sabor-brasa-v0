@@ -1,11 +1,12 @@
 import { Title } from '@/components/_layout/title'
 import { Card } from '@/components/_ui/card'
+import logo from '@/assets/sabor-brasa-logo.png'
 import { m } from 'framer-motion'
 import { Code, FileText, Heart, Info } from 'lucide-react'
 
 const APP_VERSION = '1.0.0'
 
-const team = [{ name: 'JHP Produtos', role: 'Desenvolvimento & Manutenção' }]
+const team = [{ name: 'Sabor & Brasa', role: 'Desenvolvimento & Manutenção' }]
 
 export function Component() {
   return (
@@ -19,7 +20,7 @@ export function Component() {
               <Info size={22} className='text-primary' />
             </div>
             <div>
-              <h3 className='font-bold text-lg'>JHP Produtos</h3>
+              <img src={logo} alt='Sabor & Brasa' className='h-14 w-auto max-w-52 object-contain' />
               <p className='text-xs text-base-content/60'>Sistema de Gestão de Vendas</p>
             </div>
           </div>
