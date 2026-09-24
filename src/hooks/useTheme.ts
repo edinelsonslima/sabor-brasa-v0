@@ -1,6 +1,7 @@
 import { createStore } from './useStore'
 
 const THEMES = [
+  'sabor-brasa',
   'light',
   'dark',
   'cupcake',
@@ -51,9 +52,9 @@ export const themeStore = createStore<State, Actions>({
   persist: { key: 'theme' },
 
   createState: () => {
-    document.documentElement.setAttribute('data-theme', 'light')
+    document.documentElement.setAttribute('data-theme', 'sabor-brasa')
     return {
-      theme: 'light',
+      theme: 'sabor-brasa',
     }
   },
 

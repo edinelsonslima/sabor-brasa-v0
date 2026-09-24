@@ -1,11 +1,11 @@
 {
-  "name": "JHP Produtos - Gestão de Vendas",
-  "short_name": "JHP Produtos",
-  "description": "Sistema de gestão de vendas JHP Produtos",
+  "name": "Sabor & Brasa - Gestão de Vendas",
+  "short_name": "Sabor & Brasa",
+  "description": "Sistema de gestão de vendas do Sabor & Brasa Restaurante & Bar",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1d232a",
-  "theme_color": "#570df8",
+  "background_color": "#fffaf5",
+  "theme_color": "#ea5b0c",
   "orientation": "portrait-primary",
   "icons": [
     {

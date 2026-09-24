@@ -1,6 +1,7 @@
 import { Button } from '@/components/_ui/button'
 import { Label } from '@/components/_ui/label'
 import { toast } from '@/components/_ui/toast'
+import logo from '@/assets/sabor-brasa-logo.png'
 import { authStore } from '@/hooks/useAuth'
 import { m } from 'framer-motion'
 import type { FormEvent } from 'react'
@@ -52,9 +53,7 @@ export function Component() {
     <div className='min-h-dvh flex items-center justify-center bg-base-100 px-4'>
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className='w-full max-w-sm space-y-6'>
         <div className='text-center'>
-          <h1 className='text-2xl font-extrabold tracking-tight'>
-            <span className='text-primary'>JHP</span> Produtos
-          </h1>
+          <img src={logo} alt='Sabor & Brasa — Restaurante & Bar' className='mx-auto h-28 w-auto max-w-full object-contain' />
           <p className='text-sm text-base-content/60 mt-1'>{isRegister ? 'Crie sua conta' : 'Acesse sua conta'}</p>
         </div>
 
