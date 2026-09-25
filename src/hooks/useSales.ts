@@ -7,7 +7,7 @@ type CreateSale = Omit<Sale, 'id' | 'timestamp'>
 
 type Actions = {
   get: (id: string) => Sale | undefined
-  add: (data: CreateSale) => void
+  add: (data: CreateSale) => string
   update: (id: string, data: Partial<CreateSale>) => void
   delete: (id: string) => void
 }
@@ -38,7 +38,8 @@ export const saleStore = createStore<State, Actions>({
       const custom = data.products.custom.reduce((s, p) => s + p.quantity, 0)
       const count = regular + custom
 
-      const sales = [{ ...data, id: generateUUID(), timestamp: Date.now() }, ...get().sales]
+      const id = generateUUID()
+      const sales = [{ ...data, id, timestamp: Date.now() }, ...get().sales]
 
       set({
         sales: sales,
@@ -47,6 +48,8 @@ export const saleStore = createStore<State, Actions>({
       })
 
       logAudit('sale_created', `Venda de ${count} itens - Total: R$ ${total}`)
+
+      return id
     },
 
     update: (id, data) => {
