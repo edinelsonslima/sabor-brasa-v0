@@ -13,7 +13,8 @@ import {
   Package,
   Palette,
   Search,
-  ShoppingCart,
+  ReceiptText,
+  Wallet,
   Users,
 } from 'lucide-react'
 import type { PropsWithChildren } from 'react'
@@ -31,7 +32,7 @@ interface MobileProps {
 const dockerItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/historico', icon: CalendarDays, label: 'Histórico' },
-  { to: '/vendas', icon: ShoppingCart, label: 'Vendas' },
+  { to: '/comandas', icon: ReceiptText, label: 'Comandas' },
   { to: '/pagamentos', icon: Users, label: 'Diárias' },
   { to: '/produtos', icon: Package, label: 'Produtos' },
 ]
@@ -102,6 +103,12 @@ export function Mobile({ user, theme }: PropsWithChildren<MobileProps>) {
               <li className='daisy-menu-title'>
                 <span className='truncate'>{user?.name}</span>
                 <span className='text-xs opacity-60 truncate'>{user?.email}</span>
+              </li>
+
+              <li>
+                <Link to='/gastos'>
+                  <Wallet size={14} /> Gastos
+                </Link>
               </li>
 
               <li>

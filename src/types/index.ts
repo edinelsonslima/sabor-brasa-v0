@@ -45,3 +45,24 @@ export interface Payment {
     id: string
   }
 }
+
+export interface Order {
+  id: string
+  name: string
+  status: 'open' | 'closed'
+  openedAt: number
+  closedAt?: number
+  items: SaleProducts
+  saleId?: string
+}
+
+export type ExpenseCategory = 'bebidas_comida' | 'funcionarios' | 'outros'
+
+export interface Expense {
+  id: string
+  description: string
+  category: ExpenseCategory
+  amount: number
+  date: string
+  timestamp: number
+}
