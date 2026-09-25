@@ -20,6 +20,7 @@ function AuthGate() {
       <Route element={<Authenticated logged={logged} />}>
         <Route element={<AppLayout />}>
           <Route index path='/' lazy={() => import('@/pages/Index')} hydrateFallbackElement={<Loading />} />
+          <Route path='/dashboard' lazy={() => import('@/pages/Dashboard')} hydrateFallbackElement={<Loading />} />
           <Route path='/vendas' lazy={() => import('@/pages/Sales')} hydrateFallbackElement={<Loading />} />
           <Route
             path='/vendas/:id/editar'
