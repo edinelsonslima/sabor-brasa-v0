@@ -1,13 +1,12 @@
 import { Title } from '@/components/_layout/title'
 import { Button } from '@/components/_ui/button'
-import { ConfirmButton } from '@/components/_ui/button/confirm'
 import { Card } from '@/components/_ui/card'
 import { toast } from '@/components/_ui/toast'
 import { orderStore } from '@/hooks/useOrders'
 import { productStore } from '@/hooks/useProducts'
 import { formatCurrency, vibrate } from '@/lib/utils'
 import type { Order } from '@/types'
-import { ChevronRight, Plus, ReceiptText, ShoppingCart, Trash2 } from 'lucide-react'
+import { ChevronRight, Plus, ReceiptText, ShoppingCart } from 'lucide-react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
@@ -37,13 +36,13 @@ export function Component() {
         title='Comandas'
         subtitle='Abra comandas e adicione pedidos'
         suffix={
-          <Link to='/vendas' className={Button.getStyle('', { appearance: 'outline' })}>
+          <Link to='/vendas' className={Button.getStyle('', { appearance: 'soft', variant: 'secondary' })}>
             <ShoppingCart size={16} /> Venda rápida
           </Link>
         }
       />
 
-      <form onSubmit={handleOpen} className={Card.getStyle('p-4 flex gap-2')}>
+      <form onSubmit={handleOpen} className='flex flex-row gap-2'>
         <input
           name='name'
           type='text'
@@ -51,8 +50,8 @@ export function Component() {
           placeholder='Mesa 3, João, balcão...'
           className='daisy-input daisy-input-bordered w-full'
         />
-        <Button type='submit' variant='primary'>
-          <Plus size={16} /> Abrir
+        <Button type='submit' variant='primary' modifier='square'>
+          <Plus size={16} />
         </Button>
       </form>
 
@@ -61,7 +60,7 @@ export function Component() {
         {open.length === 0 ? (
           <Card className='p-8 text-center text-base-content/60 text-sm'>Nenhuma comanda aberta</Card>
         ) : (
-          <div className='space-y-2'>
+          <div className='space-y-3'>
             {open.map((o) => {
               const count =
                 o.items.regular.reduce((s, p) => s + p.quantity, 0) + o.items.custom.reduce((s, p) => s + p.quantity, 0)
