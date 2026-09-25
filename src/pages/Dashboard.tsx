@@ -10,7 +10,7 @@ import { saleStore } from '@/hooks/useSales'
 import { cn, formatCurrency } from '@/lib/utils'
 import { Banknote, DollarSign, Wallet, Minus, Smartphone, TrendingDown, TrendingUp } from 'lucide-react'
 
-export default function Dashboard() {
+export function Component() {
   const user = authStore.useStore((state) => state.user)
 
   const todaySales = saleStore.useStore((state) => state.today)
@@ -55,7 +55,7 @@ export default function Dashboard() {
       <Card appearance='ghost'>
         <Card.Title>HOJE</Card.Title>
 
-        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
+        <div className='grid grid-cols-2 lg:grid-cols-4 gap-4'>
           <Stat title='Total Vendido' value={todaySales.total} icon={{ element: DollarSign, variant: 'primary' }} />
 
           <Stat
@@ -101,7 +101,7 @@ export default function Dashboard() {
       <Card appearance='ghost'>
         <Card.Title>ESTE MÊS</Card.Title>
 
-        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+        <div className='grid grid-cols-2 lg:grid-cols-3 gap-4'>
           <Stat title='Total Mês' value={monthSales.total} icon={{ element: DollarSign, variant: 'primary' }} />
           <Stat
             title='Pix no Mês'
@@ -137,7 +137,10 @@ export default function Dashboard() {
         icon={{ element: monthNet >= 0 ? TrendingUp : TrendingDown, appearance: 'no-border' }}
         classNames={{
           icon: 'text-base-content/20 size-10',
-          value: cn('text-2xl sm:text-3xl font-extrabold mt-1 font-mono', monthNet >= 0 ? 'text-success' : 'text-error'),
+          value: cn(
+            'text-2xl sm:text-3xl font-extrabold mt-1 font-mono',
+            monthNet >= 0 ? 'text-success' : 'text-error',
+          ),
         }}
       />
 

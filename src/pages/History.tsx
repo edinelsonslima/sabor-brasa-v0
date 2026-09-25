@@ -108,7 +108,7 @@ export function Component() {
         <SalesChart day={currentDateSelected.day} year={currentDateSelected.year} month={currentDateSelected.month} />
       </Card>
 
-      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
+      <div className='grid grid-cols-2 lg:grid-cols-4 gap-4'>
         <Stat title='Vendas' value={totalSales} icon={{ element: DollarSign, variant: 'primary' }} />
         <Stat title='Pix' value={totalPix} icon={{ element: Smartphone, variant: 'success' }} variant='success' />
         <Stat title='Dinheiro' value={totalCash} icon={{ element: Banknote, variant: 'warning' }} variant='warning' />
