@@ -11,13 +11,6 @@ import { ChevronRight, Plus, ReceiptText, ShoppingCart, Trash2 } from 'lucide-re
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
-export function orderTotal(order: Order) {
-  return (
-    order.items.custom.reduce((a, p) => a + p.price * p.quantity, 0) +
-    order.items.regular.reduce((a, p) => a + (productStore.action.get(p.id)?.price ?? 0) * p.quantity, 0)
-  )
-}
-
 export function Component() {
   const orders = orderStore.useStore((s) => s.orders)
   const navigate = useNavigate()
@@ -40,7 +33,15 @@ export function Component() {
 
   return (
     <>
-      <Title title='Comandas' subtitle='Abra comandas e adicione pedidos' />
+      <Title
+        title='Comandas'
+        subtitle='Abra comandas e adicione pedidos'
+        suffix={
+          <Link to='/vendas' className={Button.getStyle('', { appearance: 'outline' })}>
+            <ShoppingCart size={16} /> Venda rápida
+          </Link>
+        }
+      />
 
       <form onSubmit={handleOpen} className={Card.getStyle('p-4 flex gap-2')}>
         <input
@@ -48,7 +49,7 @@ export function Component() {
           type='text'
           maxLength={60}
           placeholder='Mesa 3, João, balcão...'
-          className='daisy-input flex-1'
+          className='daisy-input daisy-input-bordered w-full'
         />
         <Button type='submit' variant='primary'>
           <Plus size={16} /> Abrir
@@ -65,7 +66,7 @@ export function Component() {
               const count =
                 o.items.regular.reduce((s, p) => s + p.quantity, 0) + o.items.custom.reduce((s, p) => s + p.quantity, 0)
               return (
-                <div key={o.id} className={Card.getStyle('p-3 flex items-center gap-3')}>
+                <div key={o.id} className={Card.getStyle('p-3 flex flex-row items-center gap-3')}>
                   <Link to={`/comandas/${o.id}`} className='flex flex-1 items-center gap-3 min-w-0'>
                     <ReceiptText className='text-primary shrink-0' size={22} />
                     <div className='min-w-0 flex-1'>
@@ -78,24 +79,12 @@ export function Component() {
                     <span className='font-mono font-bold'>{formatCurrency(orderTotal(o))}</span>
                     <ChevronRight size={18} className='opacity-40' />
                   </Link>
-                  <ConfirmButton
-                    size='xs'
-                    variant='error'
-                    appearance='soft'
-                    onConfirm={() => (orderStore.action.delete(o.id), toast.success('Comanda excluída'))}
-                  >
-                    <Trash2 size={15} />
-                  </ConfirmButton>
                 </div>
               )
             })}
           </div>
         )}
       </Card>
-
-      <Link to='/vendas' className={Button.getStyle('w-full', { appearance: 'outline' })}>
-        <ShoppingCart size={16} /> Venda rápida (sem comanda)
-      </Link>
 
       {closed.length > 0 && (
         <Card appearance='ghost'>
@@ -116,5 +105,12 @@ export function Component() {
         </Card>
       )}
     </>
+  )
+}
+
+function orderTotal(order: Order) {
+  return (
+    order.items.custom.reduce((a, p) => a + p.price * p.quantity, 0) +
+    order.items.regular.reduce((a, p) => a + (productStore.action.get(p.id)?.price ?? 0) * p.quantity, 0)
   )
 }
