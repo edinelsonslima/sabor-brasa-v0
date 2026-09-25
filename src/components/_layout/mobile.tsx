@@ -30,7 +30,7 @@ interface MobileProps {
 }
 
 const dockerItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/historico', icon: CalendarDays, label: 'Histórico' },
   { to: '/comandas', icon: ReceiptText, label: 'Comandas' },
   { to: '/pagamentos', icon: Users, label: 'Diárias' },
