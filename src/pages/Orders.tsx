@@ -90,7 +90,7 @@ export function Component() {
           <Card.Title>FECHADAS RECENTEMENTE</Card.Title>
           <div className='space-y-2'>
             {closed.map((o) => (
-              <div key={o.id} className={Card.getStyle('p-3 flex justify-between items-center opacity-70')}>
+              <div key={o.id} className={Card.getStyle('p-3 flex flex-row justify-between items-center opacity-70')}>
                 <div>
                   <p className='text-sm font-semibold'>{o.name}</p>
                   <p className='text-xs text-base-content/60'>
