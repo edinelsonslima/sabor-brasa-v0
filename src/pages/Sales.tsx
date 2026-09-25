@@ -17,18 +17,28 @@ import type { PaymentMethod, Product, SaleProducts } from '@/types'
 import { AnimatePresence, m } from 'framer-motion'
 import { Banknote, Plus, Smartphone, Trash2 } from 'lucide-react'
 import type { FormEvent } from 'react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { orderStore } from '@/hooks/useOrders'
 
 export function Component() {
   const sales = saleStore.useStore((state) => state.sales)
   const products = productStore.useStore((state) => state.products)
   const celebration = useRef<{ celebrate: () => void }>(null)
+  const navigate = useNavigate()
+  const { id: orderId } = useParams()
+  const order = orderStore.useStore((state) => (orderId ? state.orders.find((o) => o.id === orderId) : undefined))
+  const isOrder = !!orderId
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('dinheiro')
-  const [selected, setSelected] = useState<SaleProducts>({
-    custom: [],
-    regular: [],
-  })
+  const [selected, setSelected] = useState<SaleProducts>(() => order?.items ?? { custom: [], regular: [] })
+
+  useEffect(() => {
+    if (orderId && order?.status === 'open' && order.items !== selected) {
+      orderStore.action.setItems(orderId, selected)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected])
 
   const [cashAmount, setCashAmount] = useState(0)
   const [pixAmount, setPixAmount] = useState(0)
@@ -96,7 +106,7 @@ export function Component() {
       pix = pixAmount
     }
 
-    saleStore.action.add({
+    const saleId = saleStore.action.add({
       paymentMethod,
       products: selected,
       price: { total, cash, pix },
@@ -107,8 +117,16 @@ export function Component() {
     setPixAmount(0)
     setPaymentMethod('dinheiro')
     setSelected({ custom: [], regular: [] })
-    toast.success('Venda registrada!')
     celebration.current?.celebrate()
+
+    if (orderId) {
+      orderStore.action.close(orderId, saleId)
+      toast.success('Comanda fechada!')
+      setTimeout(() => navigate('/comandas'), 600)
+      return
+    }
+
+    toast.success('Venda registrada!')
   }
 
   const handleAddCustomItem = (e: FormEvent<HTMLFormElement>) => {
@@ -163,9 +181,23 @@ export function Component() {
       return acc + (productStore.action.get(p.id)?.price ?? 0) * p.quantity
     }, 0)
 
+  if (isOrder && (!order || order.status !== 'open')) {
+    return (
+      <>
+        <Title title='Comanda' subtitle='Comanda não encontrada ou já fechada' />
+        <Link to='/comandas' className={Button.getStyle(undefined, { variant: 'primary' })}>
+          Voltar para comandas
+        </Link>
+      </>
+    )
+  }
+
   return (
     <>
-      <Title title='Vendas' subtitle='Adicione vendas ao caixa de hoje' />
+      <Title
+        title={isOrder ? `Comanda: ${order?.name}` : 'Venda rápida'}
+        subtitle={isOrder ? 'Adicione pedidos; feche quando o cliente pagar' : 'Venda direta, sem comanda'}
+      />
 
       <SaleCelebration ref={celebration} />
 
@@ -403,7 +435,7 @@ export function Component() {
 
         <div className='flex gap-2'>
           <Button type='submit' size='lg' variant='primary' className='flex-1' disabled={total <= 0}>
-            <Plus size={18} /> Registrar Venda
+            <Plus size={18} /> {isOrder ? 'Fechar Comanda' : 'Registrar Venda'}
           </Button>
 
           <Calculator saleTotal={total} />
