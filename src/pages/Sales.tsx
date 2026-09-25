@@ -9,7 +9,6 @@ import { CurrencyInput } from '@/components/currency/Input'
 import { CurrencyMonitor } from '@/components/currency/monitor'
 import { ProductItem } from '@/components/product/item'
 import { SaleCelebration } from '@/components/sales/celebration'
-import { SaleItem } from '@/components/sales/item'
 import { productStore } from '@/hooks/useProducts'
 import { saleStore } from '@/hooks/useSales'
 import { cn, formatCurrency, generateUUID, vibrate } from '@/lib/utils'
@@ -20,13 +19,15 @@ import type { FormEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { orderStore } from '@/hooks/useOrders'
+import { ConfirmButton } from '@/components/_ui/button/confirm'
 
 export function Component() {
-  const sales = saleStore.useStore((state) => state.sales)
+  const navigate = useNavigate()
+
+  const { id: orderId } = useParams()
+
   const products = productStore.useStore((state) => state.products)
   const celebration = useRef<{ celebrate: () => void }>(null)
-  const navigate = useNavigate()
-  const { id: orderId } = useParams()
   const order = orderStore.useStore((state) => (orderId ? state.orders.find((o) => o.id === orderId) : undefined))
   const isOrder = !!orderId
 
@@ -65,11 +66,6 @@ export function Component() {
       list[idx] = { ...list[idx], quantity }
       return { ...prev, regular: [...list] }
     })
-  }
-
-  const handleDeleteSale = (id: string) => {
-    saleStore.action.delete(id)
-    toast.success('Venda excluída')
   }
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -196,7 +192,7 @@ export function Component() {
     <>
       <Title
         title={isOrder ? `Comanda: ${order?.name}` : 'Venda rápida'}
-        subtitle={isOrder ? 'Adicione pedidos; feche quando o cliente pagar' : 'Venda direta, sem comanda'}
+        subtitle={isOrder ? 'Gerencie os pedidos aqui!' : 'Venda direta, sem comanda'}
       />
 
       <SaleCelebration ref={celebration} />
@@ -210,9 +206,12 @@ export function Component() {
         {total}
       </CurrencyMonitor>
 
-      <Card appearance='ghost'>
-        <Card.Title>SELECIONE UM PRODUTO</Card.Title>
+      <div className='daisy-tabs daisy-tabs-box'>
+        <input type='radio' name='type' aria-label='🍺 Bebidas' className='daisy-tab flex-1' defaultChecked />
+        <input type='radio' name='type' aria-label='🍖 Comidas' className='daisy-tab flex-1' />
+      </div>
 
+      <Card appearance='ghost'>
         {!!products.length && (
           <div className='grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 max-h-80 overflow-y-auto overflow-x-hidden'>
             {products.map((p) => (
@@ -311,40 +310,21 @@ export function Component() {
                     </div>
                   </div>
 
-                  <Button
+                  <ConfirmButton
                     size='xs'
                     variant='error'
                     appearance='soft'
-                    onClick={() => (
-                      vibrate(10),
+                    onConfirm={() =>
                       product.type === 'regular' ? handleAddProduct(product, 0) : handleDeleteCustomItem(product.id)
-                    )}
+                    }
                   >
                     <Trash2 size={15} />
-                  </Button>
+                  </ConfirmButton>
                 </div>
               ))}
           </div>
         </m.div>
       </AnimatePresence>
-
-      <m.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={cn(showFooter && total > 0 ? 'mb-36' : 'mb-0')}
-      >
-        <h3 className='text-sm font-semibold text-base-content/80 uppercase tracking-wider mb-3'>Últimas Vendas</h3>
-
-        {sales.length === 0 ? (
-          <Card className='p-8 text-center text-base-content/60 text-sm'>Nenhuma venda registrada</Card>
-        ) : (
-          <div className='space-y-2'>
-            {sales.slice(0, 20).map((sale) => (
-              <SaleItem key={sale.id} saleId={sale.id} onDelete={handleDeleteSale} />
-            ))}
-          </div>
-        )}
-      </m.div>
 
       <form
         data-swipe-ignore
