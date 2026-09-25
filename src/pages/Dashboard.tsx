@@ -4,10 +4,11 @@ import { toast } from '@/components/_ui/toast'
 import { Stat } from '@/components/dashboard/stat'
 import { SaleItem } from '@/components/sales/item'
 import { authStore } from '@/hooks/useAuth'
+import { expenseStore, sumExpenses } from '@/hooks/useExpenses'
 import { paymentStore } from '@/hooks/usePayments'
 import { saleStore } from '@/hooks/useSales'
-import { cn } from '@/lib/utils'
-import { Banknote, DollarSign, Minus, Smartphone, TrendingDown, TrendingUp } from 'lucide-react'
+import { cn, formatCurrency } from '@/lib/utils'
+import { Banknote, DollarSign, Wallet, Minus, Smartphone, TrendingDown, TrendingUp } from 'lucide-react'
 
 export default function Dashboard() {
   const user = authStore.useStore((state) => state.user)
@@ -18,7 +19,12 @@ export default function Dashboard() {
   const todayPayments = paymentStore.useStore((state) => state.today)
   const monthPayments = paymentStore.useStore((state) => state.month)
 
-  const todayNet = todaySales.total - todayPayments.total
+  const expenses = expenseStore.useStore((state) => state.expenses)
+  const todayExpenses = sumExpenses(expenses, 'today')
+  const monthExpenses = sumExpenses(expenses, 'month')
+
+  const todayNet = todaySales.total - todayPayments.total - todayExpenses
+  const monthNet = monthSales.total - monthPayments.total - monthExpenses
 
   const getGreeting = () => {
     const hour = new Date().getHours()
@@ -77,7 +83,7 @@ export default function Dashboard() {
 
       <Stat
         title='Líquido Hoje'
-        subtitle='Total vendido − diárias pagas'
+        subtitle={`Vendas − diárias − gastos (${formatCurrency(todayExpenses)} em gastos)`}
         value={todayNet}
         icon={{
           element: todayNet >= 0 ? TrendingUp : TrendingDown,
@@ -115,8 +121,25 @@ export default function Dashboard() {
             value={monthPayments.total}
             icon={{ element: Minus, variant: 'error' }}
           />
+          <Stat
+            title='Gastos no Mês'
+            variant='error'
+            value={monthExpenses}
+            icon={{ element: Wallet, variant: 'error' }}
+          />
         </div>
       </Card>
+
+      <Stat
+        title={monthNet >= 0 ? 'Lucro do Mês' : 'Prejuízo do Mês'}
+        subtitle='Vendas − diárias − gastos do mês'
+        value={monthNet}
+        icon={{ element: monthNet >= 0 ? TrendingUp : TrendingDown, appearance: 'no-border' }}
+        classNames={{
+          icon: 'text-base-content/20 size-10',
+          value: cn('text-2xl sm:text-3xl font-extrabold mt-1 font-mono', monthNet >= 0 ? 'text-success' : 'text-error'),
+        }}
+      />
 
       <Card appearance='ghost'>
         <Card.Title>VENDAS DE HOJE ({todaySales.saleId.length})</Card.Title>
