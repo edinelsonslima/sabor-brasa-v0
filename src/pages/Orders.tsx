@@ -1,14 +1,22 @@
 import { Title } from '@/components/_layout/title'
 import { Button } from '@/components/_ui/button'
+import { ConfirmButton } from '@/components/_ui/button/confirm'
 import { Card } from '@/components/_ui/card'
 import { toast } from '@/components/_ui/toast'
 import { orderStore } from '@/hooks/useOrders'
 import { productStore } from '@/hooks/useProducts'
 import { formatCurrency, vibrate } from '@/lib/utils'
 import type { Order } from '@/types'
-import { ChevronRight, Plus, ReceiptText, ShoppingCart } from 'lucide-react'
+import { ChevronRight, Plus, ReceiptText, ShoppingCart, Trash2 } from 'lucide-react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+
+export function orderTotal(order: Order) {
+  return (
+    order.items.custom.reduce((a, p) => a + p.price * p.quantity, 0) +
+    order.items.regular.reduce((a, p) => a + (productStore.action.get(p.id)?.price ?? 0) * p.quantity, 0)
+  )
+}
 
 export function Component() {
   const orders = orderStore.useStore((s) => s.orders)
@@ -32,26 +40,18 @@ export function Component() {
 
   return (
     <>
-      <Title
-        title='Comandas'
-        subtitle='Abra comandas e adicione pedidos'
-        suffix={
-          <Link to='/vendas' className={Button.getStyle('', { appearance: 'soft', variant: 'secondary' })}>
-            <ShoppingCart size={16} /> Venda rápida
-          </Link>
-        }
-      />
+      <Title title='Comandas' subtitle='Abra comandas e adicione pedidos' />
 
-      <form onSubmit={handleOpen} className='flex flex-row gap-2'>
+      <form onSubmit={handleOpen} className={Card.getStyle('p-4 flex gap-2 items-center')}>
         <input
           name='name'
           type='text'
           maxLength={60}
           placeholder='Mesa 3, João, balcão...'
-          className='daisy-input daisy-input-bordered w-full'
+          className='daisy-input flex-1 w-full min-w-0 h-12 text-base'
         />
-        <Button type='submit' variant='primary' modifier='square'>
-          <Plus size={16} />
+        <Button type='submit' variant='primary' size='md' className='h-12'>
+          <Plus size={16} /> Abrir
         </Button>
       </form>
 
@@ -60,12 +60,12 @@ export function Component() {
         {open.length === 0 ? (
           <Card className='p-8 text-center text-base-content/60 text-sm'>Nenhuma comanda aberta</Card>
         ) : (
-          <div className='space-y-3'>
+          <div className='space-y-2'>
             {open.map((o) => {
               const count =
                 o.items.regular.reduce((s, p) => s + p.quantity, 0) + o.items.custom.reduce((s, p) => s + p.quantity, 0)
               return (
-                <div key={o.id} className={Card.getStyle('p-3 flex flex-row items-center gap-3')}>
+                <div key={o.id} className={Card.getStyle('p-3 flex items-center gap-3')}>
                   <Link to={`/comandas/${o.id}`} className='flex flex-1 items-center gap-3 min-w-0'>
                     <ReceiptText className='text-primary shrink-0' size={22} />
                     <div className='min-w-0 flex-1'>
@@ -78,6 +78,14 @@ export function Component() {
                     <span className='font-mono font-bold'>{formatCurrency(orderTotal(o))}</span>
                     <ChevronRight size={18} className='opacity-40' />
                   </Link>
+                  <ConfirmButton
+                    size='xs'
+                    variant='error'
+                    appearance='soft'
+                    onConfirm={() => (orderStore.action.delete(o.id), toast.success('Comanda excluída'))}
+                  >
+                    <Trash2 size={15} />
+                  </ConfirmButton>
                 </div>
               )
             })}
@@ -85,12 +93,16 @@ export function Component() {
         )}
       </Card>
 
+      <Link to='/vendas' className={Button.getStyle('w-full', { appearance: 'outline' })}>
+        <ShoppingCart size={16} /> Venda rápida (sem comanda)
+      </Link>
+
       {closed.length > 0 && (
         <Card appearance='ghost'>
           <Card.Title>FECHADAS RECENTEMENTE</Card.Title>
           <div className='space-y-2'>
             {closed.map((o) => (
-              <div key={o.id} className={Card.getStyle('p-3 flex flex-row justify-between items-center opacity-70')}>
+              <div key={o.id} className={Card.getStyle('p-3 flex justify-between items-center opacity-70')}>
                 <div>
                   <p className='text-sm font-semibold'>{o.name}</p>
                   <p className='text-xs text-base-content/60'>
@@ -104,12 +116,5 @@ export function Component() {
         </Card>
       )}
     </>
-  )
-}
-
-function orderTotal(order: Order) {
-  return (
-    order.items.custom.reduce((a, p) => a + p.price * p.quantity, 0) +
-    order.items.regular.reduce((a, p) => a + (productStore.action.get(p.id)?.price ?? 0) * p.quantity, 0)
   )
 }

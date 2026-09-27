@@ -7,11 +7,15 @@ export interface Tenant {
   name: string
 }
 
+export type ProductCategory = 'bebida' | 'comida'
+
 export interface Product {
   id: string
   name: string
   unit: 'unidade' | 'litro'
   price: number
+  category?: ProductCategory
+  stock?: number
 }
 
 export interface SaleProducts {

@@ -9,27 +9,30 @@ import { CurrencyInput } from '@/components/currency/Input'
 import { CurrencyMonitor } from '@/components/currency/monitor'
 import { ProductItem } from '@/components/product/item'
 import { SaleCelebration } from '@/components/sales/celebration'
+import { SaleItem } from '@/components/sales/item'
 import { productStore } from '@/hooks/useProducts'
 import { saleStore } from '@/hooks/useSales'
 import { cn, formatCurrency, generateUUID, vibrate } from '@/lib/utils'
-import type { PaymentMethod, Product, SaleProducts } from '@/types'
+import type { PaymentMethod, Product, ProductCategory, SaleProducts } from '@/types'
 import { AnimatePresence, m } from 'framer-motion'
-import { Banknote, Plus, Smartphone, Trash2 } from 'lucide-react'
+import { ArrowLeft, Banknote, Plus, Smartphone, Trash2 } from 'lucide-react'
 import type { FormEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { orderStore } from '@/hooks/useOrders'
-import { ConfirmButton } from '@/components/_ui/button/confirm'
 
 export function Component() {
-  const navigate = useNavigate()
-
-  const { id: orderId } = useParams()
-
+  const sales = saleStore.useStore((state) => state.sales)
   const products = productStore.useStore((state) => state.products)
   const celebration = useRef<{ celebrate: () => void }>(null)
+  const navigate = useNavigate()
+  const { id: orderId } = useParams()
   const order = orderStore.useStore((state) => (orderId ? state.orders.find((o) => o.id === orderId) : undefined))
   const isOrder = !!orderId
+
+  const [categoryFilter, setCategoryFilter] = useState<'todos' | ProductCategory>('todos')
+  const filteredProducts =
+    categoryFilter === 'todos' ? products : products.filter((p) => p.category === categoryFilter)
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('dinheiro')
   const [selected, setSelected] = useState<SaleProducts>(() => order?.items ?? { custom: [], regular: [] })
@@ -66,6 +69,11 @@ export function Component() {
       list[idx] = { ...list[idx], quantity }
       return { ...prev, regular: [...list] }
     })
+  }
+
+  const handleDeleteSale = (id: string) => {
+    saleStore.action.delete(id)
+    toast.success('Venda excluída')
   }
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -192,7 +200,14 @@ export function Component() {
     <>
       <Title
         title={isOrder ? `Comanda: ${order?.name}` : 'Venda rápida'}
-        subtitle={isOrder ? 'Gerencie os pedidos aqui!' : 'Venda direta, sem comanda'}
+        subtitle={isOrder ? 'Adicione pedidos; feche quando o cliente pagar' : 'Venda direta, sem comanda'}
+        prefix={
+          isOrder ? (
+            <Button modifier='square' appearance='ghost' onClick={() => navigate(`/comandas/${orderId}`)}>
+              <ArrowLeft size={20} />
+            </Button>
+          ) : undefined
+        }
       />
 
       <SaleCelebration ref={celebration} />
@@ -206,23 +221,44 @@ export function Component() {
         {total}
       </CurrencyMonitor>
 
-      <div className='daisy-tabs daisy-tabs-box'>
-        <input type='radio' name='type' aria-label='🍺 Bebidas' className='daisy-tab flex-1' defaultChecked />
-        <input type='radio' name='type' aria-label='🍖 Comidas' className='daisy-tab flex-1' />
-      </div>
-
       <Card appearance='ghost'>
+        <Card.Title>SELECIONE UM PRODUTO</Card.Title>
+
         {!!products.length && (
-          <div className='grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 max-h-80 overflow-y-auto overflow-x-hidden'>
-            {products.map((p) => (
-              <ProductItem
-                key={p.id}
-                product={p}
-                onSelect={handleAddProduct}
-                quantity={selected.regular.find((s) => s.id === p.id)?.quantity}
-              />
-            ))}
-          </div>
+          <>
+            <div className='flex gap-2 mb-3'>
+              {(['todos', 'bebida', 'comida'] as const).map((c) => (
+                <Button
+                  key={c}
+                  type='button'
+                  size='sm'
+                  className='flex-1'
+                  appearance={categoryFilter === c ? undefined : 'outline'}
+                  variant={categoryFilter === c ? 'primary' : undefined}
+                  onClick={() => (vibrate(10), setCategoryFilter(c))}
+                >
+                  {c === 'todos' ? 'Todos' : c === 'bebida' ? 'Bebidas' : 'Comidas'}
+                </Button>
+              ))}
+            </div>
+
+            {!!filteredProducts.length && (
+              <div className='grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 max-h-80 overflow-y-auto overflow-x-hidden'>
+                {filteredProducts.map((p) => (
+                  <ProductItem
+                    key={p.id}
+                    product={p}
+                    onSelect={handleAddProduct}
+                    quantity={selected.regular.find((s) => s.id === p.id)?.quantity}
+                  />
+                ))}
+              </div>
+            )}
+
+            {!filteredProducts.length && (
+              <div className='p-8 text-center text-base-content/60 text-sm'>Nenhum produto nessa categoria</div>
+            )}
+          </>
         )}
 
         {!products.length && (
@@ -310,21 +346,40 @@ export function Component() {
                     </div>
                   </div>
 
-                  <ConfirmButton
+                  <Button
                     size='xs'
                     variant='error'
                     appearance='soft'
-                    onConfirm={() =>
+                    onClick={() => (
+                      vibrate(10),
                       product.type === 'regular' ? handleAddProduct(product, 0) : handleDeleteCustomItem(product.id)
-                    }
+                    )}
                   >
                     <Trash2 size={15} />
-                  </ConfirmButton>
+                  </Button>
                 </div>
               ))}
           </div>
         </m.div>
       </AnimatePresence>
+
+      <m.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={cn(showFooter && total > 0 ? 'mb-36' : 'mb-0')}
+      >
+        <h3 className='text-sm font-semibold text-base-content/80 uppercase tracking-wider mb-3'>Últimas Vendas</h3>
+
+        {sales.length === 0 ? (
+          <Card className='p-8 text-center text-base-content/60 text-sm'>Nenhuma venda registrada</Card>
+        ) : (
+          <div className='space-y-2'>
+            {sales.slice(0, 20).map((sale) => (
+              <SaleItem key={sale.id} saleId={sale.id} onDelete={handleDeleteSale} />
+            ))}
+          </div>
+        )}
+      </m.div>
 
       <form
         data-swipe-ignore

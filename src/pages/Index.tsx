@@ -1,3 +1,3 @@
-import { Navigate } from 'react-router-dom'
+import Dashboard from './Dashboard'
 
-export const Component = () => <Navigate to='/comandas' replace />
+export const Component = () => <Dashboard />

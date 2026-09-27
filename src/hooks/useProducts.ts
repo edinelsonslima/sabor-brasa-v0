@@ -1,6 +1,6 @@
 import { logAudit } from '@/lib/audit'
 import { generateUUID } from '@/lib/utils'
-import type { Product } from '@/types'
+import type { Product, SaleProducts } from '@/types'
 import { createStore } from './useStore'
 
 type CreateProduct = Omit<Product, 'id'>
@@ -10,6 +10,8 @@ type Actions = {
   add: (data: CreateProduct) => Product
   update: (id: string, data: Partial<CreateProduct>) => void
   delete: (id: string) => void
+  adjustStock: (items: SaleProducts, direction: 1 | -1) => void
+  migrate: () => void
 }
 
 type State = {
@@ -32,7 +34,12 @@ export const productStore = createStore<State, Actions>({
     add: (data) => {
       const products = get().products
 
-      const productItem = { ...data, id: generateUUID() }
+      const productItem: Product = {
+        ...data,
+        id: generateUUID(),
+        category: data.category ?? 'bebida',
+        stock: data.stock ?? 0,
+      }
 
       set({ ...get(), products: [...products, productItem] })
 
@@ -46,7 +53,18 @@ export const productStore = createStore<State, Actions>({
 
       set({
         ...get(),
-        products: products.map((p) => (p.id === id ? { ...p, ...data } : p)),
+        products: products.map((p) => {
+          if (p.id !== id) {
+            return p
+          }
+
+          return {
+            ...p,
+            ...data,
+            category: data.category ?? p.category ?? 'bebida',
+            stock: data.stock ?? p.stock ?? 0,
+          }
+        }),
       })
 
       logAudit('product_edited', `Produto editado: ${id}`)
@@ -67,5 +85,42 @@ export const productStore = createStore<State, Actions>({
 
       logAudit('product_deleted', `Produto excluído: ${product?.name ?? '?'}`)
     },
+
+    adjustStock: (items, direction) => {
+      const sold = new Map(items.regular.map((r) => [r.id, r.quantity]))
+
+      if (!sold.size) {
+        return
+      }
+
+      set({
+        ...get(),
+        products: get().products.map((p) => {
+          const quantity = sold.get(p.id)
+
+          if (!quantity) {
+            return p
+          }
+
+          return { ...p, stock: (p.stock ?? 0) + quantity * direction }
+        }),
+      })
+    },
+
+    migrate: () => {
+      const products = get().products
+
+      if (!products.length || products.every((p) => !!p.category && p.stock !== undefined)) {
+        return
+      }
+
+      set({
+        ...get(),
+        products: products.map((p) => ({ ...p, category: p.category ?? 'bebida', stock: p.stock ?? 0 })),
+      })
+    },
   }),
 })
+
+// Migração: produtos criados antes de categoria/estoque existirem recebem valores padrão
+productStore.action.migrate()
