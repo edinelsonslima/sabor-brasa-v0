@@ -1,6 +1,7 @@
 import { logAudit } from '@/lib/audit'
 import { generateUUID } from '@/lib/utils'
 import type { Sale } from '@/types'
+import { productStore } from './useProducts'
 import { createStore } from './useStore'
 
 type CreateSale = Omit<Sale, 'id' | 'timestamp'>
@@ -41,6 +42,8 @@ export const saleStore = createStore<State, Actions>({
       const id = generateUUID()
       const sales = [{ ...data, id, timestamp: Date.now() }, ...get().sales]
 
+      productStore.action.adjustStock(data.products, -1)
+
       set({
         sales: sales,
         today: calculateStats(sales, 'today'),
@@ -53,6 +56,13 @@ export const saleStore = createStore<State, Actions>({
     },
 
     update: (id, data) => {
+      const previous = get().sales.find((s) => s.id === id)
+
+      if (previous && data.products) {
+        productStore.action.adjustStock(previous.products, 1)
+        productStore.action.adjustStock(data.products, -1)
+      }
+
       const currentSales = get().sales.map((s) => {
         return s.id === id ? { ...s, ...data } : s
       })
@@ -68,7 +78,12 @@ export const saleStore = createStore<State, Actions>({
 
     delete: (id) => {
       const sales = get().sales
-      const total = sales.find((s) => s.id === id)?.price?.total ?? '?'
+      const sale = sales.find((s) => s.id === id)
+      const total = sale?.price?.total ?? '?'
+
+      if (sale) {
+        productStore.action.adjustStock(sale.products, 1)
+      }
 
       const currentSales = sales.filter((s) => s.id !== id)
 

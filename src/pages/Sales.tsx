@@ -13,9 +13,9 @@ import { SaleItem } from '@/components/sales/item'
 import { productStore } from '@/hooks/useProducts'
 import { saleStore } from '@/hooks/useSales'
 import { cn, formatCurrency, generateUUID, vibrate } from '@/lib/utils'
-import type { PaymentMethod, Product, SaleProducts } from '@/types'
+import type { PaymentMethod, Product, ProductCategory, SaleProducts } from '@/types'
 import { AnimatePresence, m } from 'framer-motion'
-import { Banknote, Plus, Smartphone, Trash2 } from 'lucide-react'
+import { ArrowLeft, Banknote, Plus, Smartphone, Trash2 } from 'lucide-react'
 import type { FormEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -29,6 +29,10 @@ export function Component() {
   const { id: orderId } = useParams()
   const order = orderStore.useStore((state) => (orderId ? state.orders.find((o) => o.id === orderId) : undefined))
   const isOrder = !!orderId
+
+  const [categoryFilter, setCategoryFilter] = useState<'todos' | ProductCategory>('todos')
+  const filteredProducts =
+    categoryFilter === 'todos' ? products : products.filter((p) => p.category === categoryFilter)
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('dinheiro')
   const [selected, setSelected] = useState<SaleProducts>(() => order?.items ?? { custom: [], regular: [] })
@@ -197,6 +201,13 @@ export function Component() {
       <Title
         title={isOrder ? `Comanda: ${order?.name}` : 'Venda rápida'}
         subtitle={isOrder ? 'Adicione pedidos; feche quando o cliente pagar' : 'Venda direta, sem comanda'}
+        prefix={
+          isOrder ? (
+            <Button modifier='square' appearance='ghost' onClick={() => navigate(`/comandas/${orderId}`)}>
+              <ArrowLeft size={20} />
+            </Button>
+          ) : undefined
+        }
       />
 
       <SaleCelebration ref={celebration} />
