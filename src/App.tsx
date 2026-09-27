@@ -27,7 +27,12 @@ function AuthGate() {
             hydrateFallbackElement={<Loading />}
           />
           <Route path='/comandas' lazy={() => import('@/pages/Orders')} hydrateFallbackElement={<Loading />} />
-          <Route path='/comandas/:id' lazy={() => import('@/pages/Sales')} hydrateFallbackElement={<Loading />} />
+          <Route path='/comandas/:id' lazy={() => import('@/pages/OrderDetail')} hydrateFallbackElement={<Loading />} />
+          <Route
+            path='/comandas/:id/pedidos'
+            lazy={() => import('@/pages/Sales')}
+            hydrateFallbackElement={<Loading />}
+          />
           <Route path='/gastos' lazy={() => import('@/pages/Expenses')} hydrateFallbackElement={<Loading />} />
           <Route path='/pagamentos' lazy={() => import('@/pages/Payments')} hydrateFallbackElement={<Loading />} />
           <Route path='/produtos' lazy={() => import('@/pages/Products')} hydrateFallbackElement={<Loading />} />

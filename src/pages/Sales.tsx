@@ -225,16 +225,40 @@ export function Component() {
         <Card.Title>SELECIONE UM PRODUTO</Card.Title>
 
         {!!products.length && (
-          <div className='grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 max-h-80 overflow-y-auto overflow-x-hidden'>
-            {products.map((p) => (
-              <ProductItem
-                key={p.id}
-                product={p}
-                onSelect={handleAddProduct}
-                quantity={selected.regular.find((s) => s.id === p.id)?.quantity}
-              />
-            ))}
-          </div>
+          <>
+            <div className='flex gap-2 mb-3'>
+              {(['todos', 'bebida', 'comida'] as const).map((c) => (
+                <Button
+                  key={c}
+                  type='button'
+                  size='sm'
+                  className='flex-1'
+                  appearance={categoryFilter === c ? undefined : 'outline'}
+                  variant={categoryFilter === c ? 'primary' : undefined}
+                  onClick={() => (vibrate(10), setCategoryFilter(c))}
+                >
+                  {c === 'todos' ? 'Todos' : c === 'bebida' ? 'Bebidas' : 'Comidas'}
+                </Button>
+              ))}
+            </div>
+
+            {!!filteredProducts.length && (
+              <div className='grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 max-h-80 overflow-y-auto overflow-x-hidden'>
+                {filteredProducts.map((p) => (
+                  <ProductItem
+                    key={p.id}
+                    product={p}
+                    onSelect={handleAddProduct}
+                    quantity={selected.regular.find((s) => s.id === p.id)?.quantity}
+                  />
+                ))}
+              </div>
+            )}
+
+            {!filteredProducts.length && (
+              <div className='p-8 text-center text-base-content/60 text-sm'>Nenhum produto nessa categoria</div>
+            )}
+          </>
         )}
 
         {!products.length && (
