@@ -42,15 +42,15 @@ export function Component() {
     <>
       <Title title='Comandas' subtitle='Abra comandas e adicione pedidos' />
 
-      <form onSubmit={handleOpen} className={Card.getStyle('p-4 flex gap-2')}>
+      <form onSubmit={handleOpen} className={Card.getStyle('p-4 flex gap-2 items-center')}>
         <input
           name='name'
           type='text'
           maxLength={60}
           placeholder='Mesa 3, João, balcão...'
-          className='daisy-input flex-1'
+          className='daisy-input flex-1 w-full min-w-0 h-12 text-base'
         />
-        <Button type='submit' variant='primary'>
+        <Button type='submit' variant='primary' size='md' className='h-12'>
           <Plus size={16} /> Abrir
         </Button>
       </form>

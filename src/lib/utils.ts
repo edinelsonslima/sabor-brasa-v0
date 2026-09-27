@@ -17,7 +17,7 @@ export function formatDateTime(dateString: string) {
 }
 
 export function vibrate(pattern: number | number[]) {
-  return window?.navigator?.vibrate(pattern)
+  return window?.navigator?.vibrate?.(pattern)
 }
 
 export function generateUUID(): string {
