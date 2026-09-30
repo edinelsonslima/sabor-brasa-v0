@@ -14,22 +14,25 @@ export interface Product {
   name: string
   unit: 'unidade' | 'litro'
   price: number
+  imageUrl?: string
   category?: ProductCategory
   stock?: number
 }
 
-export interface SaleProducts {
-  regular: { id: string; quantity: number }[]
-  custom: (Product & { quantity: number })[]
+export interface OrderProduct {
+  productId: string
+  quantity: number
 }
 
-export interface Sale {
+export interface Order {
   id: string
-  date: string
-  timestamp: number
-  paymentMethod: PaymentMethod
-  price: { total: number; cash: number; pix: number }
-  products: SaleProducts
+  name: string
+  products: OrderProduct[]
+  status: 'open' | 'closed'
+  openedAt: number
+  paymentMethod?: PaymentMethod
+  price?: { total: number; cash: number; pix: number }
+  closedAt?: number
 }
 
 export interface Employee {
@@ -48,16 +51,6 @@ export interface Payment {
     type: 'employee' | 'external'
     id: string
   }
-}
-
-export interface Order {
-  id: string
-  name: string
-  status: 'open' | 'closed'
-  openedAt: number
-  closedAt?: number
-  items: SaleProducts
-  saleId?: string
 }
 
 export type ExpenseCategory = 'bebidas_comida' | 'funcionarios' | 'outros'

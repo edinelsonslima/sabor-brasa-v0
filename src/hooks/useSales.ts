@@ -1,24 +1,27 @@
 import { logAudit } from '@/lib/audit'
 import { generateUUID } from '@/lib/utils'
-import type { Sale } from '@/types'
+import type { Order } from '@/types'
 import { productStore } from './useProducts'
 import { createStore } from './useStore'
 
-type CreateSale = Omit<Sale, 'id' | 'timestamp'>
+type CreateSale = Omit<Order, 'id' | 'timestamp'>
 
 type Actions = {
-  get: (id: string) => Sale | undefined
+  get: (id: string) => Order | undefined
   add: (data: CreateSale) => string
   update: (id: string, data: Partial<CreateSale>) => void
   delete: (id: string) => void
 }
 
 type State = {
-  sales: Sale[]
+  sales: Order[]
   today: { saleId: string[]; total: number; pix: number; cash: number }
   month: { saleId: string[]; total: number; pix: number; cash: number }
 }
 
+/**
+ * @deprecated Use `orderStore` instead. The `saleStore` is kept for backward compatibility and will be removed in future versions.
+ */
 export const saleStore = createStore<State, Actions>({
   persist: { key: 'sales' },
 
@@ -40,9 +43,9 @@ export const saleStore = createStore<State, Actions>({
       const count = regular + custom
 
       const id = generateUUID()
-      const sales = [{ ...data, id, timestamp: Date.now() }, ...get().sales]
+      const sales = [{ ...data, id, timestamp: new Date().getTime() }, ...get().sales]
 
-      productStore.action.adjustStock(data.products, -1)
+      productStore.action.changeStock(data.products, -1)
 
       set({
         sales: sales,
@@ -59,8 +62,8 @@ export const saleStore = createStore<State, Actions>({
       const previous = get().sales.find((s) => s.id === id)
 
       if (previous && data.products) {
-        productStore.action.adjustStock(previous.products, 1)
-        productStore.action.adjustStock(data.products, -1)
+        productStore.action.changeStock(previous.products, 1)
+        productStore.action.changeStock(data.products, -1)
       }
 
       const currentSales = get().sales.map((s) => {
@@ -82,7 +85,7 @@ export const saleStore = createStore<State, Actions>({
       const total = sale?.price?.total ?? '?'
 
       if (sale) {
-        productStore.action.adjustStock(sale.products, 1)
+        productStore.action.changeStock(sale.products, 1)
       }
 
       const currentSales = sales.filter((s) => s.id !== id)
@@ -98,7 +101,7 @@ export const saleStore = createStore<State, Actions>({
   }),
 })
 
-function calculateStats(sales: Sale[], period: 'today' | 'month') {
+function calculateStats(sales: Order[], period: 'today' | 'month') {
   const now = new Date()
 
   const month = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`

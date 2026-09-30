@@ -30,7 +30,7 @@ export function logAudit(action: string, details: string) {
     details,
     userName: user.name,
     userId: user.id,
-    timestamp: Date.now(),
+    timestamp: new Date().getTime(),
   }
 
   const log = getAuditLog()

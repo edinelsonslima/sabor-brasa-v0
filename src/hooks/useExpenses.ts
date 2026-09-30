@@ -27,7 +27,7 @@ export const expenseStore = createStore<State, Actions>({
 
   createActions: (set, get) => ({
     add: (data) => {
-      set({ expenses: [{ ...data, id: generateUUID(), timestamp: Date.now() }, ...get().expenses] })
+      set({ expenses: [{ ...data, id: generateUUID(), timestamp: new Date().getTime() }, ...get().expenses] })
       logAudit('expense_created', `Gasto: ${data.description} - ${formatCurrency(data.amount)}`)
     },
 

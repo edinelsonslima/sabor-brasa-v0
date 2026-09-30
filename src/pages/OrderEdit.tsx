@@ -5,67 +5,63 @@ import { Label } from '@/components/_ui/label'
 import { toast } from '@/components/_ui/toast'
 import { CurrencyInput } from '@/components/currency/Input'
 import { CurrencyMonitor } from '@/components/currency/monitor'
+import { orderStore } from '@/hooks/useOrders'
 import { productStore } from '@/hooks/useProducts'
-import { saleStore } from '@/hooks/useSales'
 import { cn, formatCurrency, vibrate } from '@/lib/utils'
-import type { PaymentMethod, Sale } from '@/types'
-import { ArrowLeft, Banknote, Minus, Plus, Save, Smartphone, Trash2 } from 'lucide-react'
+import type { PaymentMethod } from '@/types'
+import { Banknote, Minus, Plus, Save, Smartphone, Trash2, UndoDotIcon } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 
 export function Component() {
   const navigate = useNavigate()
-  const { id } = useParams<{ id: string }>()
+  const params = useParams<{ id: string }>()
 
-  const sale = saleStore.useStore((s) => s.sales.find((s) => s.id === id))
+  const orders = orderStore.useStore((state) => state)
+  const order = orders.find((order) => order.id === params.id)
 
-  const [products, setProducts] = useState<Sale['products']>(sale?.products ?? { regular: [], custom: [] })
+  const [cashAmount, setCashAmount] = useState(order?.price?.cash ?? 0)
+  const [pixAmount, setPixAmount] = useState(order?.price?.pix ?? 0)
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(order?.paymentMethod ?? 'dinheiro')
 
-  const [cashAmount, setCashAmount] = useState(sale?.price.cash ?? 0)
-  const [pixAmount, setPixAmount] = useState(sale?.price.pix ?? 0)
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(sale?.paymentMethod ?? 'dinheiro')
+  const [products, setProducts] = useState(() => {
+    const orderProducts = order?.products.map((prd) => {
+      const product = productStore.action.get(prd.productId)
+      return product ? { ...product, quantity: prd.quantity } : null
+    })
 
-  if (!sale) {
-    return (
-      <div className='text-center py-20'>
-        <p className='text-base-content/60'>Venda não encontrada</p>
-        <Link to='/' className='text-primary underline mt-4 inline-block'>
-          Voltar ao Dashboard
-        </Link>
-      </div>
-    )
-  }
+    return orderProducts?.filter((p): p is NonNullable<typeof p> => !!p) ?? []
+  })
 
   const mixedTotal = cashAmount + pixAmount
-
-  const total =
-    products.custom.reduce((acc, p) => acc + p.price * p.quantity, 0) +
-    products.regular.reduce((acc, p) => {
-      return acc + (productStore.action.get(p.id)?.price ?? 0) * p.quantity
-    }, 0)
+  const total = products.reduce((acc, p) => acc + p.price * p.quantity, 0)
 
   const updateQuantity = (productId: string, delta: number) => {
     vibrate(10)
-    setProducts((prev) => {
-      const isCustom = prev.custom.some((p) => p.id === productId)
 
-      if (isCustom) {
-        const updated = prev.custom.map((p) =>
-          p.id === productId ? { ...p, quantity: Math.max(0, p.quantity + delta) } : p,
-        )
-        return { ...prev, custom: updated.filter((p) => p.quantity > 0) }
+    setProducts((prev) => {
+      const products = [...prev]
+      const productIndex = products.findIndex((p) => p.id === productId)
+
+      if (productIndex === -1) {
+        return prev
       }
 
-      const updated = prev.regular.map((p) =>
-        p.id === productId ? { ...p, quantity: Math.max(0, p.quantity + delta) } : p,
-      )
-      return { ...prev, regular: updated.filter((p) => p.quantity > 0) }
+      const qty = Math.max(0, products[productIndex].quantity + delta)
+      products[productIndex].quantity = qty
+
+      return [...products]
     })
   }
 
   const handleSave = () => {
-    if (products.regular.length === 0 && products.custom.length === 0) {
-      toast.error('A venda precisa ter pelo menos um produto')
+    if (!order?.id) {
+      toast.error('Comanda não encontrada')
+      return
+    }
+
+    if (!products.length) {
+      toast.error('A comanda precisa ter pelo menos um produto')
       return
     }
 
@@ -74,8 +70,8 @@ export function Component() {
       return
     }
 
-    saleStore.action.update(sale.id, {
-      products,
+    orderStore.action.update(order.id, {
+      products: products.map((p) => ({ productId: p.id, quantity: p.quantity })),
       paymentMethod,
       price: {
         total,
@@ -84,37 +80,66 @@ export function Component() {
       },
     })
 
-    toast.success('Venda atualizada!')
+    toast.success('Comanda atualizada!')
     navigate(-1)
   }
 
   const handleDelete = () => {
-    saleStore.action.delete(sale.id)
-    toast.success('Venda excluída')
+    if (!order?.id) {
+      toast.error('Comanda não encontrada')
+      return
+    }
+
+    orderStore.action.delete(order?.id)
+    toast.success('Comanda excluída')
     navigate(-1)
   }
 
+  const handleReopen = () => {
+    if (!order?.id) {
+      toast.error('Comanda não encontrada')
+      return
+    }
+
+    orderStore.action.update(order.id, {
+      status: 'open',
+      products: products.map((p) => ({ productId: p.id, quantity: p.quantity })),
+      paymentMethod: undefined,
+      price: undefined,
+      closedAt: undefined,
+    })
+
+    toast.success('Comanda reaberta!')
+    navigate(`/comandas/${order.id}`)
+  }
+
   const getProducts = () => {
-    return (products?.regular ?? [])
+    return products
       .map((p) => {
         const product = productStore.action.get(p.id)
         return product ? { ...product, quantity: p.quantity } : null
       })
-      .concat(products?.custom ?? [])
       .filter((p) => !!p)
+  }
+
+  if (!order) {
+    return (
+      <div className='text-center py-20'>
+        <p className='text-base-content/60'>Comanda não encontrada</p>
+        <Link to='/' className='text-primary underline mt-4 inline-block'>
+          Voltar ao Dashboard
+        </Link>
+      </div>
+    )
+  }
+
+  if (order.status === 'open') {
+    return <Navigate to={`/comandas/${order.id}`} replace />
   }
 
   return (
     <>
-      <Title
-        title='Editar Venda'
-        subtitle={new Date(sale.date).toLocaleString('pt-BR')}
-        prefix={
-          <Button modifier='square' appearance='ghost' onClick={() => navigate(-1)}>
-            <ArrowLeft size={20} />
-          </Button>
-        }
-      />
+      <Title title={`Editar Comanda: ${order.name}`} subtitle={new Date(order.openedAt).toLocaleString('pt-BR')} />
 
       <Card>
         <p className='text-xs text-base-content/60 uppercase tracking-wide font-semibold'>Total</p>
@@ -123,7 +148,7 @@ export function Component() {
       </Card>
 
       <Card>
-        <Card.Title>Produtos ({products.regular.length + products.custom.length})</Card.Title>
+        <Card.Title>Produtos ({products.length})</Card.Title>
 
         {getProducts().map((product) => (
           <div
@@ -230,13 +255,17 @@ export function Component() {
         data-swipe-ignore
         className='daisy-glass fixed bottom-16 left-0 right-0 flex gap-3 p-4 border-t border-base-300 z-30'
       >
+        <Button.Confirm size='lg' variant='error' appearance='soft' modifier='square' onConfirm={handleDelete}>
+          <Trash2 size={20} />
+        </Button.Confirm>
+
+        <Button.Confirm size='lg' variant='neutral' appearance='soft' modifier='square' onConfirm={handleReopen}>
+          <UndoDotIcon size={20} />
+        </Button.Confirm>
+
         <Button size='lg' variant='primary' className='flex-1' onClick={handleSave}>
           <Save size={20} /> Salvar Alterações
         </Button>
-
-        <Button.Confirm size='lg' variant='error' appearance='soft' onConfirm={handleDelete}>
-          <Trash2 size={20} />
-        </Button.Confirm>
       </div>
     </>
   )

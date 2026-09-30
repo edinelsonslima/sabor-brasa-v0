@@ -44,7 +44,7 @@ export function ConfirmButton({ onConfirm, children, className, ...props }: Prop
 
   return (
     <div ref={ref} className='inline-flex'>
-      <Button {...props} variant={confirming ? 'error' : props.variant} className={className} onClick={handleClick}>
+      <Button {...props} className={className} onClick={handleClick}>
         {confirming ? <Check size={14} /> : children}
       </Button>
     </div>

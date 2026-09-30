@@ -21,11 +21,7 @@ export function vibrate(pattern: number | number[]) {
 }
 
 export function generateUUID(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0
-    const v = c === 'x' ? r : (r & 0x3) | 0x8
-    return v.toString(16)
-  })
+  return window?.crypto?.randomUUID?.()
 }
 
 export function storage<T extends Lowercase<`${string}-${string}`>>(keys: T[]) {
@@ -33,16 +29,16 @@ export function storage<T extends Lowercase<`${string}-${string}`>>(keys: T[]) {
     throw new Error('At least one key must be provided')
   }
 
-  const prefix = 'jhp-store-'
+  const prefix = 'sabor-brasa-'
 
   type Key = (typeof keys)[number]
 
   const save = (key: Key, value: unknown, expiresIn: number = Infinity) => {
     const toSave = JSON.stringify({
       data: value,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      expiresAt: expiresIn > 0 ? Date.now() + expiresIn : null,
+      createdAt: new Date().getTime(),
+      updatedAt: new Date().getTime(),
+      expiresAt: expiresIn > 0 ? new Date().getTime() + expiresIn : null,
     })
 
     localStorage.setItem(prefix + key, toSave)
@@ -58,7 +54,7 @@ export function storage<T extends Lowercase<`${string}-${string}`>>(keys: T[]) {
     try {
       const parsed = JSON.parse(item)
 
-      if (parsed.expiresAt && Date.now() > parsed.expiresAt) {
+      if (parsed.expiresAt && new Date().getTime() > parsed.expiresAt) {
         localStorage.removeItem(prefix + key)
         return defaultValue
       }
@@ -74,8 +70,8 @@ export function storage<T extends Lowercase<`${string}-${string}`>>(keys: T[]) {
 
     const toSave = JSON.stringify({
       data: { ...existing, ...value },
-      createdAt: existing?.createdAt || Date.now(),
-      updatedAt: Date.now(),
+      createdAt: existing?.createdAt || new Date().getTime(),
+      updatedAt: new Date().getTime(),
       expiresAt: existing?.expiresAt || null,
     })
 

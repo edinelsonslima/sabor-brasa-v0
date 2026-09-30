@@ -10,7 +10,7 @@ import { saleStore } from '@/hooks/useSales'
 import { cn, formatCurrency } from '@/lib/utils'
 import { Banknote, DollarSign, Wallet, Minus, Smartphone, TrendingDown, TrendingUp } from 'lucide-react'
 
-export default function Dashboard() {
+export function Component() {
   const user = authStore.useStore((state) => state.user)
 
   const todaySales = saleStore.useStore((state) => state.today)
@@ -137,7 +137,10 @@ export default function Dashboard() {
         icon={{ element: monthNet >= 0 ? TrendingUp : TrendingDown, appearance: 'no-border' }}
         classNames={{
           icon: 'text-base-content/20 size-10',
-          value: cn('text-2xl sm:text-3xl font-extrabold mt-1 font-mono', monthNet >= 0 ? 'text-success' : 'text-error'),
+          value: cn(
+            'text-2xl sm:text-3xl font-extrabold mt-1 font-mono',
+            monthNet >= 0 ? 'text-success' : 'text-error',
+          ),
         }}
       />
 

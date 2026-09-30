@@ -1,116 +1,115 @@
 import { Title } from '@/components/_layout/title'
 import { Button } from '@/components/_ui/button'
-import { ConfirmButton } from '@/components/_ui/button/confirm'
 import { Card } from '@/components/_ui/card'
 import { toast } from '@/components/_ui/toast'
 import { orderStore } from '@/hooks/useOrders'
 import { productStore } from '@/hooks/useProducts'
 import { formatCurrency, vibrate } from '@/lib/utils'
-import type { Order } from '@/types'
-import { ChevronRight, Plus, ReceiptText, ShoppingCart, Trash2 } from 'lucide-react'
-import type { FormEvent } from 'react'
+import { ChevronRight, Plus, ReceiptTextIcon } from 'lucide-react'
+import type { SubmitEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
-export function orderTotal(order: Order) {
-  return (
-    order.items.custom.reduce((a, p) => a + p.price * p.quantity, 0) +
-    order.items.regular.reduce((a, p) => a + (productStore.action.get(p.id)?.price ?? 0) * p.quantity, 0)
-  )
-}
-
 export function Component() {
-  const orders = orderStore.useStore((s) => s.orders)
   const navigate = useNavigate()
+
+  const orders = orderStore.useStore((state) => state)
 
   const open = orders.filter((o) => o.status === 'open')
   const closed = orders.filter((o) => o.status === 'closed').slice(0, 15)
 
-  const handleOpen = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const name = new FormData(e.currentTarget).get('name')?.toString().trim() ?? ''
-    if (!name) {
+
+    const form = new FormData(e.currentTarget)
+    const orderName = form.get('name')?.toString().trim() ?? ''
+
+    if (!orderName) {
       toast.warn('Digite um nome para a comanda')
       return
     }
+
     vibrate(10)
-    const order = orderStore.action.open(name)
-    toast.success(`Comanda "${name}" aberta`)
+
+    const order = orderStore.action.create(orderName)
+
+    toast.success(`Comanda "${order.name}" aberta`)
     navigate(`/comandas/${order.id}`)
+  }
+
+  const getOrderTotal = (orderId: string) => {
+    const order = orderStore.action.get(orderId) ?? { products: [] }
+
+    return order.products.reduce((acc, p) => {
+      const productPrice = productStore.action.get(p.productId)?.price ?? 0
+      return acc + productPrice * p.quantity
+    }, 0)
   }
 
   return (
     <>
       <Title title='Comandas' subtitle='Abra comandas e adicione pedidos' />
 
-      <form onSubmit={handleOpen} className={Card.getStyle('p-4 flex gap-2 items-center')}>
+      <form onSubmit={handleSubmit} className='flex gap-2 items-center'>
         <input
           name='name'
           type='text'
           maxLength={60}
           placeholder='Mesa 3, João, balcão...'
-          className='daisy-input flex-1 w-full min-w-0 h-12 text-base'
+          className='daisy-input flex-1 w-full min-w-0 text-base'
         />
-        <Button type='submit' variant='primary' size='md' className='h-12'>
+        <Button type='submit' variant='primary' size='md'>
           <Plus size={16} /> Abrir
         </Button>
       </form>
 
       <Card appearance='ghost'>
         <Card.Title>ABERTAS ({open.length})</Card.Title>
-        {open.length === 0 ? (
-          <Card className='p-8 text-center text-base-content/60 text-sm'>Nenhuma comanda aberta</Card>
-        ) : (
-          <div className='space-y-2'>
-            {open.map((o) => {
-              const count =
-                o.items.regular.reduce((s, p) => s + p.quantity, 0) + o.items.custom.reduce((s, p) => s + p.quantity, 0)
-              return (
-                <div key={o.id} className={Card.getStyle('p-3 flex items-center gap-3')}>
-                  <Link to={`/comandas/${o.id}`} className='flex flex-1 items-center gap-3 min-w-0'>
-                    <ReceiptText className='text-primary shrink-0' size={22} />
-                    <div className='min-w-0 flex-1'>
-                      <p className='font-semibold truncate'>{o.name}</p>
-                      <p className='text-xs text-base-content/60'>
-                        {count} itens · aberta às{' '}
-                        {new Date(o.openedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
-                    <span className='font-mono font-bold'>{formatCurrency(orderTotal(o))}</span>
-                    <ChevronRight size={18} className='opacity-40' />
-                  </Link>
-                  <ConfirmButton
-                    size='xs'
-                    variant='error'
-                    appearance='soft'
-                    onConfirm={() => (orderStore.action.delete(o.id), toast.success('Comanda excluída'))}
-                  >
-                    <Trash2 size={15} />
-                  </ConfirmButton>
+        {open.length === 0 && <Card className='p-8 text-center text-base-content/60'>Nenhuma comanda aberta</Card>}
+
+        {open.length > 0 && (
+          <div className='grid grid-cols-2 gap-3'>
+            {open.map((order) => (
+              <Link key={order.id} to={`/comandas/${order.id}`} className={Card.getStyle('min-w-0 flex-1 p-3')}>
+                <div className='flex items-center justify-between gap-1'>
+                  <span className='flex items-center gap-1'>
+                    <ReceiptTextIcon className='text-primary shrink-0' size={16} />
+                    <p className='font-semibold truncate text-lg'>{order.name}</p>
+                  </span>
+                  <span className='font-mono font-bold'>{formatCurrency(getOrderTotal(order.id))}</span>
                 </div>
-              )
-            })}
+
+                <div className='flex items-center'>
+                  <p className='text-xs text-base-content/60'>
+                    {order.products.length} itens · aberta às{' '}
+                    {new Date(order.openedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                  <ChevronRight size={18} className='opacity-40' />
+                </div>
+              </Link>
+            ))}
           </div>
         )}
       </Card>
 
-      <Link to='/vendas' className={Button.getStyle('w-full', { appearance: 'outline' })}>
-        <ShoppingCart size={16} /> Venda rápida (sem comanda)
-      </Link>
-
       {closed.length > 0 && (
         <Card appearance='ghost'>
           <Card.Title>FECHADAS RECENTEMENTE</Card.Title>
+
           <div className='space-y-2'>
-            {closed.map((o) => (
-              <div key={o.id} className={Card.getStyle('p-3 flex justify-between items-center opacity-70')}>
+            {closed.map((order) => (
+              <Link
+                key={order.id}
+                to={`/comandas/${order.id}/editar`}
+                className={Card.getStyle('p-3 flex flex-row justify-between items-center opacity-70')}
+              >
                 <div>
-                  <p className='text-sm font-semibold'>{o.name}</p>
+                  <p className='text-sm font-semibold'>{order.name}</p>
                   <p className='text-xs text-base-content/60'>
-                    Fechada {o.closedAt ? new Date(o.closedAt).toLocaleString('pt-BR') : ''}
+                    Fechada {order.closedAt ? new Date(order.closedAt).toLocaleString('pt-BR') : ''}
                   </p>
                 </div>
-                <span className='font-mono text-sm'>{formatCurrency(orderTotal(o))}</span>
-              </div>
+                <span className='font-mono text-sm'>{formatCurrency(getOrderTotal(order.id))}</span>
+              </Link>
             ))}
           </div>
         </Card>

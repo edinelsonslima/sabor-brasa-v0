@@ -36,17 +36,21 @@ const styled = createStyle({
   },
 })
 
-interface Props extends ComponentProps<'div'> {
+interface Props extends Omit<ComponentProps<'div'>, 'className'> {
   variant?: GetStyleConfig<typeof styled, 'variant'>
   size?: GetStyleConfig<typeof styled, 'size'>
   modifier?: GetStyleConfig<typeof styled, 'modifier'>
   appearance?: GetStyleConfig<typeof styled, 'appearance'>
+  className?: string | Partial<{ root: string; body: string }>
 }
 
 export function Card({ children, className, variant, size = 'sm', modifier, appearance, ...props }: Props) {
+  const rootClassName = typeof className === 'object' ? className.root : className
+  const bodyClassName = typeof className === 'object' ? className.body : undefined
+
   return (
     <div
-      className={Card.getStyle(className, {
+      className={Card.getStyle(rootClassName, {
         variant,
         size,
         modifier,
@@ -54,7 +58,7 @@ export function Card({ children, className, variant, size = 'sm', modifier, appe
       })}
       {...props}
     >
-      <div className={cn('daisy-card-body', appearance === 'ghost' && 'p-0')}>{children}</div>
+      <div className={cn('daisy-card-body', appearance === 'ghost' && 'p-0', bodyClassName)}>{children}</div>
     </div>
   )
 }

@@ -1,61 +1,102 @@
 import { logAudit } from '@/lib/audit'
 import { generateUUID } from '@/lib/utils'
-import type { Order, SaleProducts } from '@/types'
+import type { Order, OrderProduct } from '@/types'
 import { createStore } from './useStore'
 
 type Actions = {
   get: (id: string) => Order | undefined
-  open: (name: string) => Order
-  setItems: (id: string, items: SaleProducts) => void
-  close: (id: string, saleId: string) => void
+  create: (name: string) => Order
+  update: (id: string, updateOrder: Partial<Order>) => void
   delete: (id: string) => void
+
+  setProducts: (id: string, items: OrderProduct[]) => void
+  getProducts: (id: string) => OrderProduct[]
 }
 
-type State = {
-  orders: Order[]
-}
-
-export const orderStore = createStore<State, Actions>({
+export const orderStore = createStore<Order[], Actions>({
   persist: { key: 'orders' },
 
-  createState: () => ({ orders: [] }),
+  createState: () => [],
 
   createActions: (set, get) => ({
-    get: (id) => get().orders.find((o) => o.id === id),
+    get: (orderId) => {
+      return get().find((order) => order.id === orderId)
+    },
 
-    open: (name) => {
+    create: (name) => {
       const order: Order = {
         id: generateUUID(),
-        name,
+        name: name,
         status: 'open',
-        openedAt: Date.now(),
-        items: { regular: [], custom: [] },
+        openedAt: new Date().getTime(),
+        products: [],
       }
 
-      set({ orders: [order, ...get().orders] })
+      set((prev) => [...prev, order])
       logAudit('order_opened', `Comanda aberta: ${name}`)
 
       return order
     },
 
-    setItems: (id, items) => {
-      set({ orders: get().orders.map((o) => (o.id === id ? { ...o, items } : o)) })
+    update: (orderId, updateOrder) => {
+      const orders = [...get()]
+      const orderIndex = orders.findIndex((order) => order.id === orderId)
+
+      if (orderIndex === -1) {
+        return
+      }
+
+      orders[orderIndex].id = updateOrder?.id ?? orders[orderIndex]?.id
+      orders[orderIndex].name = updateOrder?.name ?? orders[orderIndex]?.name
+      orders[orderIndex].products = updateOrder?.products ?? orders[orderIndex]?.products
+      orders[orderIndex].status = updateOrder?.status ?? orders[orderIndex]?.status
+      orders[orderIndex].openedAt = updateOrder?.openedAt ?? orders[orderIndex]?.openedAt
+      orders[orderIndex].paymentMethod = updateOrder?.paymentMethod ?? orders[orderIndex]?.paymentMethod
+      orders[orderIndex].closedAt = updateOrder?.closedAt ?? orders[orderIndex]?.closedAt
+
+      if (orders[orderIndex].price) {
+        orders[orderIndex].price.cash = updateOrder?.price?.cash ?? orders[orderIndex]?.price?.cash
+        orders[orderIndex].price.pix = updateOrder?.price?.pix ?? orders[orderIndex]?.price?.pix
+        orders[orderIndex].price.total = updateOrder?.price?.total ?? orders[orderIndex]?.price?.total
+      }
+
+      set(orders)
+
+      if (updateOrder?.status === 'closed') {
+        logAudit('order_closed', `Comanda fechada: ${orders[orderIndex].name ?? orderId}`)
+        return
+      }
+
+      if (updateOrder?.status === 'open') {
+        logAudit('order_opened', `Comanda aberta: ${orders[orderIndex].name ?? orderId}`)
+        return
+      }
+
+      logAudit('order_updated', `Comanda atualizada: ${orders[orderIndex].name ?? orderId}`)
     },
 
-    close: (id, saleId) => {
-      const order = get().orders.find((o) => o.id === id)
-      set({
-        orders: get().orders.map((o) =>
-          o.id === id ? { ...o, status: 'closed', closedAt: Date.now(), saleId } : o,
-        ),
-      })
-      logAudit('order_closed', `Comanda fechada: ${order?.name ?? id}`)
+    delete: (orderId) => {
+      const order = get().find((o) => o.id === orderId)
+      set((prev) => [...prev.filter((o) => o.id !== orderId)])
+      logAudit('order_deleted', `Comanda excluída: ${order?.name ?? orderId}`)
     },
 
-    delete: (id) => {
-      const order = get().orders.find((o) => o.id === id)
-      set({ orders: get().orders.filter((o) => o.id !== id) })
-      logAudit('order_deleted', `Comanda excluída: ${order?.name ?? id}`)
+    getProducts: (orderId) => {
+      const order = get().find((o) => o.id === orderId)
+      return order?.products ?? []
+    },
+
+    setProducts: (orderId, products) => {
+      const orders = [...get()]
+      const orderIndex = orders.findIndex((o) => o.id === orderId)
+
+      if (orderIndex === -1) {
+        return
+      }
+
+      orders[orderIndex].products = products
+
+      set(orders)
     },
   }),
 })

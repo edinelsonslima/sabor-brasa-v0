@@ -113,8 +113,8 @@ function ProductEditModal({ product }: { product: Product }) {
               value={unit}
               onChange={(e) => setUnit(e.target.value as 'unidade' | 'litro')}
             >
-              <option value='litro'>Por Litro</option>
               <option value='unidade'>Por Unidade</option>
+              <option value='litro'>Por Litro</option>
             </select>
           </div>
         </div>
@@ -175,10 +175,10 @@ function ProductEditModal({ product }: { product: Product }) {
 }
 
 export function Component() {
-  const products = productStore.useStore((state) => state.products)
+  const products = productStore.useStore((state) => state)
 
   const [name, setName] = useState('')
-  const [unit, setUnit] = useState<'unidade' | 'litro'>('litro')
+  const [unit, setUnit] = useState<'unidade' | 'litro'>('unidade')
   const [category, setCategory] = useState<ProductCategory>('bebida')
   const [price, setPrice] = useState(0)
   const [stock, setStock] = useState(0)
@@ -243,8 +243,8 @@ export function Component() {
               value={unit}
               onChange={(e) => setUnit(e.target.value as 'unidade' | 'litro')}
             >
-              <option value='litro'>Por Litro</option>
               <option value='unidade'>Por Unidade</option>
+              <option value='litro'>Por Litro</option>
             </select>
           </div>
         </div>
@@ -284,11 +284,13 @@ export function Component() {
         <h3 className='text-sm font-semibold text-base-content/60 uppercase tracking-wider mb-3'>
           Catálogo ({products.length})
         </h3>
-        <Card className='overflow-hidden divide-y divide-base-300 p-0'>
+
+        <Card className={{ root: 'overflow-hidden', body: 'divide-y divide-base-content/20' }}>
           {products.map((p) => (
-            <div key={p.id} className='flex items-center justify-between gap-2 px-5 py-3'>
+            <div key={p.id} className='flex items-center justify-between gap-2 py-3'>
               <div className='flex items-center gap-3 min-w-0 flex-1'>
                 <Package size={16} className='text-primary shrink-0' />
+
                 <div className='min-w-0'>
                   <p className='text-sm font-semibold truncate'>{p.name}</p>
                   <div className='flex items-center gap-2 flex-wrap'>
@@ -304,20 +306,24 @@ export function Component() {
                   </div>
                 </div>
               </div>
-              <div className='flex items-center gap-2 shrink-0'>
+
+              <div className='flex items-center gap-4'>
                 <p className='text-sm font-bold font-mono'>{formatCurrency(p.price)}</p>
-                <ProductEditModal product={p} />
-                <Button.Confirm
-                  size='xs'
-                  variant='error'
-                  appearance='soft'
-                  onConfirm={() => {
-                    productStore.action.delete(p.id)
-                    toast.info('Produto removido')
-                  }}
-                >
-                  <Trash2 size={14} />
-                </Button.Confirm>
+
+                <div className='flex items-center gap-2'>
+                  <ProductEditModal product={p} />
+                  <Button.Confirm
+                    size='sm'
+                    variant='error'
+                    appearance='soft'
+                    onConfirm={() => {
+                      productStore.action.delete(p.id)
+                      toast.info('Produto removido')
+                    }}
+                  >
+                    <Trash2 size={14} />
+                  </Button.Confirm>
+                </div>
               </div>
             </div>
           ))}

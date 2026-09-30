@@ -34,7 +34,7 @@ export const paymentStore = createStore<State, Actions>({
     },
 
     add: (data) => {
-      const payments = [{ ...data, id: generateUUID(), timestamp: Date.now() }, ...get().payments]
+      const payments = [{ ...data, id: generateUUID(), timestamp: new Date().getTime() }, ...get().payments]
 
       set({
         payments,

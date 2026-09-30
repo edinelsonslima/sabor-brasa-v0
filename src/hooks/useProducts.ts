@@ -1,6 +1,6 @@
 import { logAudit } from '@/lib/audit'
 import { generateUUID } from '@/lib/utils'
-import type { Product, SaleProducts } from '@/types'
+import type { Product, OrderProduct } from '@/types'
 import { createStore } from './useStore'
 
 type CreateProduct = Omit<Product, 'id'>
@@ -10,30 +10,20 @@ type Actions = {
   add: (data: CreateProduct) => Product
   update: (id: string, data: Partial<CreateProduct>) => void
   delete: (id: string) => void
-  adjustStock: (items: SaleProducts, direction: 1 | -1) => void
-  migrate: () => void
+  changeStock: (orderProducts: OrderProduct[]) => void
 }
 
-type State = {
-  products: Product[]
-}
-
-export const productStore = createStore<State, Actions>({
+export const productStore = createStore<Product[], Actions>({
   persist: { key: 'products' },
 
-  createState: () => ({
-    products: [],
-    customProducts: [],
-  }),
+  createState: () => [],
 
   createActions: (set, get) => ({
     get: (id) => {
-      return get().products.find((p) => p.id === id)
+      return get().find((p) => p.id === id)
     },
 
     add: (data) => {
-      const products = get().products
-
       const productItem: Product = {
         ...data,
         id: generateUUID(),
@@ -41,7 +31,7 @@ export const productStore = createStore<State, Actions>({
         stock: data.stock ?? 0,
       }
 
-      set({ ...get(), products: [...products, productItem] })
+      set((prev) => [productItem, ...prev])
 
       logAudit('product_created', `Produto cadastrado: ${data.name}`)
 
@@ -49,11 +39,8 @@ export const productStore = createStore<State, Actions>({
     },
 
     update: (id, data) => {
-      const products = get().products
-
-      set({
-        ...get(),
-        products: products.map((p) => {
+      set((prev) =>
+        prev.map((p) => {
           if (p.id !== id) {
             return p
           }
@@ -65,62 +52,39 @@ export const productStore = createStore<State, Actions>({
             stock: data.stock ?? p.stock ?? 0,
           }
         }),
-      })
+      )
 
       logAudit('product_edited', `Produto editado: ${id}`)
     },
 
     delete: (id) => {
-      const products = get().products
-      const product = products.find((p) => p.id === id)
+      const product = get().find((p) => p.id === id)
 
       if (!product) {
         return
       }
 
-      set({
-        ...get(),
-        products: products.filter((p) => p.id !== id),
-      })
+      set((prev) => prev.filter((product) => product.id !== id))
 
       logAudit('product_deleted', `Produto excluído: ${product?.name ?? '?'}`)
     },
 
-    adjustStock: (items, direction) => {
-      const sold = new Map(items.regular.map((r) => [r.id, r.quantity]))
-
-      if (!sold.size) {
+    changeStock: (orderProducts) => {
+      if (!orderProducts.length) {
         return
       }
 
-      set({
-        ...get(),
-        products: get().products.map((p) => {
-          const quantity = sold.get(p.id)
+      set((prev) =>
+        prev.map((product) => {
+          const quantity = orderProducts.find((op) => op.productId === product.id)?.quantity
 
-          if (!quantity) {
-            return p
+          if (quantity === undefined) {
+            return product
           }
 
-          return { ...p, stock: (p.stock ?? 0) + quantity * direction }
+          return { ...product, stock: (product.stock ?? 0) + quantity }
         }),
-      })
-    },
-
-    migrate: () => {
-      const products = get().products
-
-      if (!products.length || products.every((p) => !!p.category && p.stock !== undefined)) {
-        return
-      }
-
-      set({
-        ...get(),
-        products: products.map((p) => ({ ...p, category: p.category ?? 'bebida', stock: p.stock ?? 0 })),
-      })
+      )
     },
   }),
 })
-
-// Migração: produtos criados antes de categoria/estoque existirem recebem valores padrão
-productStore.action.migrate()

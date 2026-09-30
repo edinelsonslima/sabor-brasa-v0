@@ -53,7 +53,11 @@ export function Component() {
     <div className='min-h-dvh flex items-center justify-center bg-base-100 px-4'>
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className='w-full max-w-sm space-y-6'>
         <div className='text-center'>
-          <img src={logo} alt='Sabor & Brasa — Restaurante & Bar' className='mx-auto h-28 w-auto max-w-full object-contain' />
+          <img
+            src={logo}
+            alt='Sabor & Brasa — Restaurante & Bar'
+            className='mx-auto h-28 w-auto max-w-full object-contain'
+          />
           <p className='text-sm text-base-content/60 mt-1'>{isRegister ? 'Crie sua conta' : 'Acesse sua conta'}</p>
         </div>
 

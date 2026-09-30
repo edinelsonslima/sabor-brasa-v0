@@ -16,7 +16,7 @@ export function Title({ title, subtitle, prefix, suffix, className, ...props }: 
   }
 
   return (
-    <div className={cn('flex gap-3 items-center', className)} {...props}>
+    <div className={cn('flex gap-3 items-center justify-between', className)} {...props}>
       {prefix}
 
       <div>

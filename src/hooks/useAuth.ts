@@ -30,32 +30,36 @@ type Actions = {
 // Migração: usuários persistidos antes do campo `modules` recebem todos os módulos.
 // Executa antes da criação do store para que o estado carregado já venha corrigido.
 ;(() => {
-  if (typeof localStorage === 'undefined') return
+  if (typeof localStorage === 'undefined') {
+    return
+  }
 
   const key = 'jhp-store-store-auth'
   const raw = localStorage.getItem(key)
-  if (!raw) return
+  if (!raw) {
+    return
+  }
 
   try {
     const parsed = JSON.parse(raw)
     const data = parsed?.data as Partial<State> | undefined
-    if (!data) return
+    if (!data) {
+      return
+    }
 
     const users = Array.isArray(data.users) ? (data.users as AppUser[]) : []
     const user = (data.user ?? null) as AppUser | null
 
-    const needs =
-      users.some((u) => !Array.isArray(u.modules)) || (user !== null && !Array.isArray(user.modules))
-    if (!needs) return
+    const needs = users.some((u) => !Array.isArray(u.modules)) || (user !== null && !Array.isArray(user.modules))
+    if (!needs) {
+      return
+    }
 
-    const migratedUsers = users.map((u) =>
-      Array.isArray(u.modules) ? u : { ...u, modules: [...ALL_MODULES] },
-    )
-    const migratedUser =
-      user && !Array.isArray(user.modules) ? { ...user, modules: [...ALL_MODULES] } : user
+    const migratedUsers = users.map((u) => (Array.isArray(u.modules) ? u : { ...u, modules: [...ALL_MODULES] }))
+    const migratedUser = user && !Array.isArray(user.modules) ? { ...user, modules: [...ALL_MODULES] } : user
 
     parsed.data = { ...data, users: migratedUsers, user: migratedUser }
-    parsed.updatedAt = Date.now()
+    parsed.updatedAt = new Date().getTime()
     localStorage.setItem(key, JSON.stringify(parsed))
   } catch {
     // noop

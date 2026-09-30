@@ -1,3 +1,1 @@
-import Dashboard from './Dashboard'
-
-export const Component = () => <Dashboard />
+export { Component } from './Orders'

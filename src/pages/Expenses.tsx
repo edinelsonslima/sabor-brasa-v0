@@ -45,7 +45,12 @@ export function Component() {
       <Title title='Gastos' subtitle='Compras e despesas do estabelecimento' />
 
       <div className='grid grid-cols-2 gap-4'>
-        <Stat title='Gastos no mês' variant='error' value={monthExpenses} icon={{ element: Wallet, variant: 'error' }} />
+        <Stat
+          title='Gastos no mês'
+          variant='error'
+          value={monthExpenses}
+          icon={{ element: Wallet, variant: 'error' }}
+        />
         <Stat
           title='Diárias no mês'
           variant='error'
