@@ -42,6 +42,7 @@ export const orderStore = createStore<Order[], Actions>({
       const orders = [...get()]
       const orderIndex = orders.findIndex((order) => order.id === orderId)
 
+      console.log({ orderId, updateOrder, orderIndex, orders })
       if (orderIndex === -1) {
         return
       }

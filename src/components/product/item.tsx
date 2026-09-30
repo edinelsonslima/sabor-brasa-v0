@@ -1,8 +1,9 @@
 import { cn, formatCurrency, vibrate } from '@/lib/utils'
 import type { Product } from '@/types'
-import { MinusIcon, PlusIcon } from 'lucide-react'
+import { MinusIcon, PackageIcon, PlusIcon } from 'lucide-react'
 import type { ComponentProps } from 'react'
 import { Button } from '../_ui/button'
+import { productStore } from '@/hooks/useProducts'
 
 interface Props extends Omit<ComponentProps<'div'>, 'onSelect'> {
   product: Product
@@ -11,10 +12,24 @@ interface Props extends Omit<ComponentProps<'div'>, 'onSelect'> {
 }
 
 export function ProductItem({ product, quantity = 0, className, onSelect, ...props }: Props) {
-  const updateProductByQuantity = (qty: number = 0) => {
+  const handleChangeProductQuantity = (qty: number = 0) => {
     const newQuantity = Math.max(qty, 0)
     onSelect(product, newQuantity)
     vibrate(10)
+  }
+
+  const handleAddProduct = () => {
+    handleChangeProductQuantity(quantity + 1)
+    productStore.action.changeStock(product.id, -1)
+  }
+
+  const handleRemoveProduct = () => {
+    if (quantity <= 0) {
+      return
+    }
+
+    handleChangeProductQuantity(quantity - 1)
+    productStore.action.changeStock(product.id, 1)
   }
 
   return (
@@ -25,6 +40,14 @@ export function ProductItem({ product, quantity = 0, className, onSelect, ...pro
           alt={product.name}
           className='object-contain size-full aspect-square'
         />
+        <div
+          className={cn(
+            'daisy-badge daisy-badge-sm daisy-badge-soft font-bold whitespace-nowrap absolute top-2 right-2',
+            product.stock ? product.stock <= 0 && 'daisy-badge-error' : 'daisy-badge-warning',
+          )}
+        >
+          {product.stock ?? '-'} <PackageIcon size={16} />
+        </div>
       </figure>
 
       <div className='daisy-card-body p-2'>
@@ -39,15 +62,11 @@ export function ProductItem({ product, quantity = 0, className, onSelect, ...pro
         </div>
 
         <div className='daisy-card-actions justify-end flex-row flex-nowrap gap-2'>
-          <Button onClick={() => updateProductByQuantity(quantity - 1)} variant='error' appearance='soft'>
+          <Button onClick={handleRemoveProduct} variant='error' appearance='soft'>
             <MinusIcon size={16} className='text-error-content' />
           </Button>
-          <Button
-            onClick={() => updateProductByQuantity(quantity + 1)}
-            variant='success'
-            appearance='soft'
-            className='flex-1'
-          >
+
+          <Button onClick={handleAddProduct} variant='success' appearance='soft' className='flex-1'>
             <PlusIcon size={16} className='text-success-content' />
           </Button>
         </div>

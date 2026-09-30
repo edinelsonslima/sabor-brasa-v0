@@ -1,6 +1,6 @@
 import { logAudit } from '@/lib/audit'
 import { generateUUID } from '@/lib/utils'
-import type { Product, OrderProduct } from '@/types'
+import type { Product } from '@/types'
 import { createStore } from './useStore'
 
 type CreateProduct = Omit<Product, 'id'>
@@ -10,7 +10,7 @@ type Actions = {
   add: (data: CreateProduct) => Product
   update: (id: string, data: Partial<CreateProduct>) => void
   delete: (id: string) => void
-  changeStock: (orderProducts: OrderProduct[]) => void
+  changeStock: (productId: string, quantity: number) => void
 }
 
 export const productStore = createStore<Product[], Actions>({
@@ -69,22 +69,19 @@ export const productStore = createStore<Product[], Actions>({
       logAudit('product_deleted', `Produto excluído: ${product?.name ?? '?'}`)
     },
 
-    changeStock: (orderProducts) => {
-      if (!orderProducts.length) {
-        return
-      }
+    changeStock: (productId, quantity) => {
+      set((prev) => {
+        const products = [...prev]
+        const productIndex = products.findIndex((p) => p.id === productId)
 
-      set((prev) =>
-        prev.map((product) => {
-          const quantity = orderProducts.find((op) => op.productId === product.id)?.quantity
+        if (productIndex === -1) {
+          return prev
+        }
 
-          if (quantity === undefined) {
-            return product
-          }
+        products[productIndex].stock = (products[productIndex].stock ?? 0) + quantity
 
-          return { ...product, stock: (product.stock ?? 0) + quantity }
-        }),
-      )
+        return [...products]
+      })
     },
   }),
 })

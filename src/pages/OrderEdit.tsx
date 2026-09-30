@@ -9,7 +9,7 @@ import { orderStore } from '@/hooks/useOrders'
 import { productStore } from '@/hooks/useProducts'
 import { cn, formatCurrency, vibrate } from '@/lib/utils'
 import type { PaymentMethod } from '@/types'
-import { Banknote, Minus, Plus, Save, Smartphone, Trash2, UndoDotIcon } from 'lucide-react'
+import { Banknote, Minus, PackageIcon, Plus, Save, Smartphone, Trash2, UndoDotIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 
@@ -42,13 +42,14 @@ export function Component() {
     setProducts((prev) => {
       const products = [...prev]
       const productIndex = products.findIndex((p) => p.id === productId)
+      const product = products[productIndex]
 
-      if (productIndex === -1) {
+      if (productIndex === -1 || (delta < 0 && product.quantity <= 0)) {
         return prev
       }
 
-      const qty = Math.max(0, products[productIndex].quantity + delta)
-      products[productIndex].quantity = qty
+      product.quantity = Math.max(0, product.quantity + delta)
+      product.stock = (product.stock ?? 0) - delta
 
       return [...products]
     })
@@ -113,15 +114,6 @@ export function Component() {
     navigate(`/comandas/${order.id}`)
   }
 
-  const getProducts = () => {
-    return products
-      .map((p) => {
-        const product = productStore.action.get(p.id)
-        return product ? { ...product, quantity: p.quantity } : null
-      })
-      .filter((p) => !!p)
-  }
-
   if (!order) {
     return (
       <div className='text-center py-20'>
@@ -150,7 +142,7 @@ export function Component() {
       <Card>
         <Card.Title>Produtos ({products.length})</Card.Title>
 
-        {getProducts().map((product) => (
+        {products.map((product) => (
           <div
             key={product.id}
             className='flex items-center justify-between py-2 border-b border-base-300 last:border-0'
@@ -162,12 +154,12 @@ export function Component() {
               </p>
             </div>
 
-            <div className='flex items-center gap-2'>
+            <div className='flex items-center gap-1'>
               <Button type='button' size='sm' modifier='square' onClick={() => updateQuantity(product.id, -1)}>
                 <Minus size={14} />
               </Button>
 
-              <span className='w-8 text-center font-mono font-bold'>{product.quantity}</span>
+              <span className='w-8 text-center font-mono font-bold whitespace-nowrap'>{product.quantity}</span>
 
               <Button type='button' size='sm' modifier='square' onClick={() => updateQuantity(product.id, 1)}>
                 <Plus size={14} />
@@ -176,7 +168,7 @@ export function Component() {
           </div>
         ))}
 
-        {getProducts().length === 0 && (
+        {products.length === 0 && (
           <p className='text-sm text-base-content/60 text-center py-4'>Todos os produtos foram removidos</p>
         )}
       </Card>

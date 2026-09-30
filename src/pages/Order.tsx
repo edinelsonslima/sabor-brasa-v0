@@ -18,7 +18,7 @@ export function Component() {
   const celebration = useRef<{ celebrate: () => void }>(null)
 
   const products = productStore.useStore((state) => state)
-  const orderState = orderStore.useStore((state) => state)
+  const orders = orderStore.useStore((state) => state)
 
   const [searchParams, setSearchParams] = useSearchParams({
     category: 'bebida',
@@ -26,7 +26,7 @@ export function Component() {
 
   const categoryFilter = searchParams.get('category') as ProductCategory
   const filteredProducts = products.filter((p) => p.category === categoryFilter)
-  const order = orderState.find((o) => o.id === params.id)
+  const order = orders.find((o) => o.id === params.id)
 
   const setCategoryFilter = (category: ProductCategory) => {
     setSearchParams((prev) => {
