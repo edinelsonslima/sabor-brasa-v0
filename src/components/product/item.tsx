@@ -36,7 +36,7 @@ export function ProductItem({ product, quantity = 0, className, onSelect, ...pro
     <div className={cn('daisy-card bg-base-100 shadow-sm', className)} {...props}>
       <figure className='daisy-card-image h-32 w-full bg-base-200 rounded-t-lg overflow-hidden'>
         <img
-          src={product.imageUrl ?? '/public/icons/icon-192x192.png'}
+          src={product.imageUrl ?? '/icons/icon-192x192.png'}
           alt={product.name}
           className='object-contain size-full aspect-square'
         />
