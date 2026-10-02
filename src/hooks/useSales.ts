@@ -14,6 +14,8 @@ type Actions = {
   add: (data: CreateSale, options?: { skipStock?: boolean }) => string
   update: (id: string, data: Partial<CreateSale>) => void
   delete: (id: string) => void
+  /** Substitui todas as vendas sem mexer no estoque (migração de dados) */
+  replaceAll: (sales: Sale[]) => void
   /** Recalcula today/month (ex.: virada do dia com o app aberto) */
   refreshStats: () => void
 }
@@ -91,6 +93,8 @@ export const saleStore = createStore<State, Actions>({
 
       logAudit('sale_deleted', `Venda excluída: ${sale.name} - Total: ${formatCurrency(sale.total)}`)
     },
+
+    replaceAll: (sales) => set(withStats([...sales].sort((a, b) => b.closedAt - a.closedAt))),
 
     refreshStats: () => set(withStats(get().sales)),
   }),

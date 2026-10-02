@@ -1,3 +1,4 @@
+import { productStore } from '@/hooks/useProducts'
 import { orderStore } from '@/hooks/useOrders'
 import { saleStore } from '@/hooks/useSales'
 import type { PaymentMethod, Sale, SaleItem } from '@/types'
@@ -38,12 +39,20 @@ export function runMigrations() {
 }
 
 function migrateLegacySales() {
-  const state = saleStore.useStore.getState?.() ?? null
-  void state
+  const sales = (saleStore.getState().sales ?? []) as unknown as (Sale | LegacySale)[]
+  const hasLegacy = sales.some((s) => !Array.isArray((s as Sale).items))
+
+  if (!hasLegacy) {
+    return
+  }
+
+  saleStore.action.replaceAll(
+    sales.map((s) => (Array.isArray((s as Sale).items) ? (s as Sale) : convertLegacySale(s as LegacySale, productStore.action.get))),
+  )
 }
 
 function migrateClosedOrders() {
-  const orders = orderStore.action.getAll() as unknown as LegacyOrder[]
+  const orders = orderStore.getState() as unknown as LegacyOrder[]
   const closed = orders.filter((o) => o.status === 'closed')
 
   for (const order of closed) {
@@ -65,7 +74,7 @@ function migrateClosedOrders() {
   }
 }
 
-export function convertLegacySale(s: LegacySale, productName: (id: string) => { name: string; price: number } | undefined): Sale {
+export function convertLegacySale(s: LegacySale, productName: (id: string) => { name: string; price: number } | undefined,): Sale {
   const items: SaleItem[] = [
     ...(s.products?.regular ?? []).map((p) => {
       const product = productName(p.id)
