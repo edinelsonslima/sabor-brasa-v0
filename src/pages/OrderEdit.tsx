@@ -11,7 +11,7 @@ import { cn, formatCurrency, vibrate } from '@/lib/utils'
 import { saleStore } from '@/hooks/useSales'
 import { itemsTotal, splitPayment } from '@/lib/sales'
 import type { PaymentMethod, SaleItem } from '@/types'
-import { Banknote, Minus, PackageIcon, Plus, Save, Smartphone, Trash2, UndoDotIcon } from 'lucide-react'
+import { Banknote, Minus, Plus, Save, Smartphone, Trash2, UndoDotIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
