@@ -8,61 +8,38 @@ import { CurrencyMonitor } from '@/components/currency/monitor'
 import { orderStore } from '@/hooks/useOrders'
 import { productStore } from '@/hooks/useProducts'
 import { cn, formatCurrency, vibrate } from '@/lib/utils'
-import type { PaymentMethod } from '@/types'
-import { Banknote, Minus, PackageIcon, Plus, Save, Smartphone, Trash2, UndoDotIcon } from 'lucide-react'
+import { saleStore } from '@/hooks/useSales'
+import { itemsTotal, splitPayment } from '@/lib/sales'
+import type { PaymentMethod, SaleItem } from '@/types'
+import { Banknote, Minus, Plus, Save, Smartphone, Trash2, UndoDotIcon } from 'lucide-react'
 import { useState } from 'react'
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
 export function Component() {
   const navigate = useNavigate()
   const params = useParams<{ id: string }>()
 
-  const orders = orderStore.useStore((state) => state)
-  const order = orders.find((order) => order.id === params.id)
+  const order = saleStore.useStore((state) => state.sales.find((s) => s.id === params.id))
 
-  const [cashAmount, setCashAmount] = useState(order?.price?.cash ?? 0)
-  const [pixAmount, setPixAmount] = useState(order?.price?.pix ?? 0)
+  const [cashAmount, setCashAmount] = useState(order?.cash ?? 0)
+  const [pixAmount, setPixAmount] = useState(order?.pix ?? 0)
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(order?.paymentMethod ?? 'dinheiro')
-
-  const [products, setProducts] = useState(() => {
-    const orderProducts = order?.products.map((prd) => {
-      const product = productStore.action.get(prd.productId)
-      return product ? { ...product, quantity: prd.quantity } : null
-    })
-
-    return orderProducts?.filter((p): p is NonNullable<typeof p> => !!p) ?? []
-  })
+  const [items, setItems] = useState<SaleItem[]>(() => order?.items.map((i) => ({ ...i })) ?? [])
 
   const mixedTotal = cashAmount + pixAmount
-  const total = products.reduce((acc, p) => acc + p.price * p.quantity, 0)
+  const total = itemsTotal(items)
 
-  const updateQuantity = (productId: string, delta: number) => {
+  const updateQuantity = (index: number, delta: number) => {
     vibrate(10)
-
-    setProducts((prev) => {
-      const products = [...prev]
-      const productIndex = products.findIndex((p) => p.id === productId)
-      const product = products[productIndex]
-
-      if (productIndex === -1 || (delta < 0 && product.quantity <= 0)) {
-        return prev
-      }
-
-      product.quantity = Math.max(0, product.quantity + delta)
-      product.stock = (product.stock ?? 0) - delta
-
-      return [...products]
-    })
+    setItems((prev) => prev.map((i, idx) => (idx === index ? { ...i, quantity: Math.max(0, i.quantity + delta) } : i)))
   }
 
   const handleSave = () => {
-    if (!order?.id) {
-      toast.error('Comanda não encontrada')
-      return
-    }
+    if (!order) return
+    const kept = items.filter((i) => i.quantity > 0)
 
-    if (!products.length) {
-      toast.error('A comanda precisa ter pelo menos um produto')
+    if (!kept.length) {
+      toast.error('A venda precisa ter pelo menos um produto')
       return
     }
 
@@ -71,53 +48,41 @@ export function Component() {
       return
     }
 
-    orderStore.action.update(order.id, {
-      products: products.map((p) => ({ productId: p.id, quantity: p.quantity })),
+    saleStore.action.update(order.id, {
+      items: kept,
       paymentMethod,
-      price: {
-        total,
-        cash: paymentMethod === 'dinheiro' ? total : paymentMethod === 'combinado' ? cashAmount : 0,
-        pix: paymentMethod === 'pix' ? total : paymentMethod === 'combinado' ? pixAmount : 0,
-      },
+      total,
+      ...splitPayment(paymentMethod, total, cashAmount, pixAmount),
     })
 
-    toast.success('Comanda atualizada!')
+    toast.success('Venda atualizada!')
     navigate(-1)
   }
 
   const handleDelete = () => {
-    if (!order?.id) {
-      toast.error('Comanda não encontrada')
-      return
-    }
-
-    orderStore.action.delete(order?.id)
-    toast.success('Comanda excluída')
+    if (!order) return
+    saleStore.action.delete(order.id)
+    toast.success('Venda excluída')
     navigate(-1)
   }
 
   const handleReopen = () => {
-    if (!order?.id) {
-      toast.error('Comanda não encontrada')
-      return
-    }
+    if (!order) return
+    const products = order.items
+      .filter((i): i is SaleItem & { productId: string } => !!i.productId && !!productStore.action.get(i.productId))
+      .map((i) => ({ productId: i.productId, quantity: i.quantity }))
 
-    orderStore.action.update(order.id, {
-      status: 'open',
-      products: products.map((p) => ({ productId: p.id, quantity: p.quantity })),
-      paymentMethod: undefined,
-      price: undefined,
-      closedAt: undefined,
-    })
+    saleStore.action.delete(order.id)
+    const reopened = orderStore.action.create(order.name, products)
 
     toast.success('Comanda reaberta!')
-    navigate(`/comandas/${order.id}`)
+    navigate(`/comandas/${reopened.id}`)
   }
 
   if (!order) {
     return (
       <div className='text-center py-20'>
-        <p className='text-base-content/60'>Comanda não encontrada</p>
+        <p className='text-base-content/60'>Venda não encontrada</p>
         <Link to='/' className='text-primary underline mt-4 inline-block'>
           Voltar ao Dashboard
         </Link>
@@ -125,13 +90,9 @@ export function Component() {
     )
   }
 
-  if (order.status === 'open') {
-    return <Navigate to={`/comandas/${order.id}`} replace />
-  }
-
   return (
     <>
-      <Title title={`Editar Comanda: ${order.name}`} subtitle={new Date(order.openedAt).toLocaleString('pt-BR')} />
+      <Title title={`Editar Venda: ${order.name}`} subtitle={new Date(order.closedAt).toLocaleString('pt-BR')} />
 
       <Card>
         <p className='text-xs text-base-content/60 uppercase tracking-wide font-semibold'>Total</p>
@@ -140,35 +101,35 @@ export function Component() {
       </Card>
 
       <Card>
-        <Card.Title>Produtos ({products.length})</Card.Title>
+        <Card.Title>Produtos ({items.length})</Card.Title>
 
-        {products.map((product) => (
+        {items.map((product, index) => (
           <div
-            key={product.id}
+            key={`${product.productId ?? product.name}-${index}`}
             className='flex items-center justify-between py-2 border-b border-base-300 last:border-0'
           >
             <div className='flex-1 min-w-0'>
               <p className='text-sm font-semibold truncate'>{product.name}</p>
               <p className='text-xs text-base-content/60 font-mono'>
-                {formatCurrency(product.price ?? 0)} / {product.unit === 'litro' ? 'L' : 'un.'}
+                {formatCurrency(product.unitPrice)}
               </p>
             </div>
 
             <div className='flex items-center gap-1'>
-              <Button type='button' size='sm' modifier='square' onClick={() => updateQuantity(product.id, -1)}>
+              <Button type='button' size='sm' modifier='square' onClick={() => updateQuantity(index, -1)}>
                 <Minus size={14} />
               </Button>
 
               <span className='w-8 text-center font-mono font-bold whitespace-nowrap'>{product.quantity}</span>
 
-              <Button type='button' size='sm' modifier='square' onClick={() => updateQuantity(product.id, 1)}>
+              <Button type='button' size='sm' modifier='square' onClick={() => updateQuantity(index, 1)}>
                 <Plus size={14} />
               </Button>
             </div>
           </div>
         ))}
 
-        {products.length === 0 && (
+        {items.every((i) => i.quantity === 0) && (
           <p className='text-sm text-base-content/60 text-center py-4'>Todos os produtos foram removidos</p>
         )}
       </Card>

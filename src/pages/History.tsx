@@ -8,7 +8,7 @@ import { employeeStore } from '@/hooks/useEmployees'
 import { paymentStore } from '@/hooks/usePayments'
 import { saleStore } from '@/hooks/useSales'
 import { toast } from '@/lib/toast'
-import { cn, formatCurrency } from '@/lib/utils'
+import { cn, formatCurrency, localDateKey } from '@/lib/utils'
 import { Banknote, DollarSign, Minus, Smartphone, TrendingDown, TrendingUp } from 'lucide-react'
 import type { ComponentProps } from 'react'
 import { useState } from 'react'
@@ -21,14 +21,14 @@ export function Component() {
   const sales = saleStore.useStore((s) => s.sales)
   const payments = paymentStore.useStore((s) => s.payments)
 
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+  const [date, setDate] = useState(localDateKey())
 
-  const daySales = sales.filter((s) => s.date.startsWith(date))
+  const daySales = sales.filter((s) => localDateKey(s.closedAt) === date)
   const dayPayments = payments.filter((p) => p.date.startsWith(date))
 
-  const totalSales = daySales.reduce((a, s) => a + (s.price?.total ?? 0), 0)
-  const totalPix = daySales.reduce((a, s) => a + (s.price?.pix ?? 0), 0)
-  const totalCash = daySales.reduce((a, s) => a + (s.price?.cash ?? 0), 0)
+  const totalSales = daySales.reduce((a, s) => a + (s.total), 0)
+  const totalPix = daySales.reduce((a, s) => a + (s.pix), 0)
+  const totalCash = daySales.reduce((a, s) => a + (s.cash), 0)
   const totalPayments = dayPayments.reduce((a, p) => a + (p.amount ?? 0), 0)
   const totalPaymentsByEmployee = dayPayments.reduce<{ id: string; name: string; amount: number; count: number }[]>(
     (acc, payment) => {
@@ -81,7 +81,7 @@ export function Component() {
     const m = (month + 1).toString().padStart(2, '0')
     const d = day.toString().padStart(2, '0')
     const dateStr = `${year}-${m}-${d}`
-    return sales.some((s) => s.date.startsWith(dateStr)) && !selected
+    return sales.some((s) => localDateKey(s.closedAt) === dateStr) && !selected
   }
 
   const handleDelete = (id: string) => {

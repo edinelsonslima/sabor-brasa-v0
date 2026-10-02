@@ -4,6 +4,7 @@ import { Card } from '@/components/_ui/card'
 import { toast } from '@/components/_ui/toast'
 import { orderStore } from '@/hooks/useOrders'
 import { productStore } from '@/hooks/useProducts'
+import { saleStore } from '@/hooks/useSales'
 import { formatCurrency, vibrate } from '@/lib/utils'
 import { ChevronRight, Plus, ReceiptTextIcon } from 'lucide-react'
 import type { SubmitEvent } from 'react'
@@ -14,8 +15,8 @@ export function Component() {
 
   const orders = orderStore.useStore((state) => state)
 
-  const open = orders.filter((o) => o.status === 'open')
-  const closed = orders.filter((o) => o.status === 'closed').slice(0, 15)
+  const open = orders
+  const closed = saleStore.useStore((state) => state.sales).slice(0, 15)
 
   const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -99,16 +100,16 @@ export function Component() {
             {closed.map((order) => (
               <Link
                 key={order.id}
-                to={`/comandas/${order.id}/editar`}
+                to={`/vendas/${order.id}/editar`}
                 className={Card.getStyle('p-3 flex flex-row justify-between items-center opacity-70')}
               >
                 <div>
                   <p className='text-sm font-semibold'>{order.name}</p>
                   <p className='text-xs text-base-content/60'>
-                    Fechada {order.closedAt ? new Date(order.closedAt).toLocaleString('pt-BR') : ''}
+                    Fechada {new Date(order.closedAt).toLocaleString('pt-BR')}
                   </p>
                 </div>
-                <span className='font-mono text-sm'>{formatCurrency(getOrderTotal(order.id))}</span>
+                <span className='font-mono text-sm'>{formatCurrency(order.total)}</span>
               </Link>
             ))}
           </div>

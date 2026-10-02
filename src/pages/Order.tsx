@@ -76,7 +76,7 @@ export function Component() {
     return acc + productPrice * p.quantity
   }, 0)
 
-  if (!order || order.status !== 'open') {
+  if (!order) {
     return (
       <>
         <Title title='Comanda' subtitle='Comanda não encontrada ou já fechada' />

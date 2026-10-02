@@ -18,7 +18,7 @@ export function Component() {
 
   const sales = saleStore.useStore((s) => s.sales)
   const employees = employeeStore.useStore((s) => s.employees)
-  const products = productStore.useStore((s) => s.products)
+  const products = productStore.useStore((s) => s)
 
   const q = query.toLowerCase().trim()
 
@@ -28,14 +28,11 @@ export function Component() {
 
   const filteredSales = q
     ? sales.filter((s) => {
-        const dateMatch = s.date.includes(q)
-        const productMatch = s.products.custom.some((p) => p.name.toLowerCase().includes(q))
-        const regularProductMatch = s.products.regular.some((p) => {
-          const product = productStore.action.get(p.id)
-          return product?.name.toLowerCase().includes(q)
-        })
-        const priceMatch = formatCurrency(s.price.total).toLowerCase().includes(q)
-        return dateMatch || productMatch || regularProductMatch || priceMatch
+        const dateMatch = new Date(s.closedAt).toLocaleDateString('pt-BR').includes(q)
+        const nameMatch = s.name.toLowerCase().includes(q)
+        const productMatch = s.items.some((i) => i.name.toLowerCase().includes(q))
+        const priceMatch = formatCurrency(s.total).toLowerCase().includes(q)
+        return dateMatch || nameMatch || productMatch || priceMatch
       })
     : []
 

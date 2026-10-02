@@ -73,6 +73,7 @@ export function createStore<
   return {
     subscribe,
     useStore,
+    getState,
     action: createActions(setState, getState),
   } as const
 }

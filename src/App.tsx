@@ -35,8 +35,8 @@ function AuthGate() {
             <Route index lazy={() => import('@/pages/Orders')} hydrateFallbackElement={<Loading />} />
             <Route path=':id' lazy={() => import('@/pages/Order')} hydrateFallbackElement={<Loading />} />
             <Route path=':id/itens' lazy={() => import('@/pages/OrderDetail')} hydrateFallbackElement={<Loading />} />
-            <Route path=':id/editar' lazy={() => import('@/pages/OrderEdit')} hydrateFallbackElement={<Loading />} />
           </Route>
+          <Route path='/vendas/:id/editar' lazy={() => import('@/pages/OrderEdit')} hydrateFallbackElement={<Loading />} />
         </Route>
       </Route>
 
