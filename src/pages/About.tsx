@@ -2,7 +2,7 @@ import { Title } from '@/components/_layout/title'
 import { Card } from '@/components/_ui/card'
 import logo from '@/assets/sabor-brasa-logo.png'
 import { m } from 'framer-motion'
-import { Code, FileText, Heart, Info } from 'lucide-react'
+import { Code, FileText, Heart, Info, LinkIcon } from 'lucide-react'
 
 const APP_VERSION = '1.0.0'
 
@@ -19,26 +19,30 @@ export function Component() {
             <div className='p-3 rounded-xl bg-primary/10'>
               <Info size={22} className='text-primary' />
             </div>
-            <div>
-              <img src={logo} alt='Sabor & Brasa' className='h-14 w-auto max-w-52 object-contain' />
-              <p className='text-xs text-base-content/60'>Sistema de Gestão de Vendas</p>
-            </div>
+            <img src={logo} alt='Sabor & Brasa' className='h-14 w-auto max-w-52 object-contain' />
           </div>
 
-          <div className='space-y-3'>
-            <div className='flex items-center justify-between py-2 border-b border-base-300'>
+          <div className='space-y-3 divide-y divide-base-content/10'>
+            <div className='flex items-center justify-between pb-3'>
               <span className='text-sm text-base-content/60'>Versão</span>
               <span className='text-sm font-mono font-bold'>v{APP_VERSION}</span>
             </div>
 
-            <div className='flex items-center justify-between py-2 border-b border-base-300'>
+            <div className='flex items-center justify-between pb-3'>
               <span className='text-sm text-base-content/60'>Plataforma</span>
               <span className='text-sm font-semibold'>Web (PWA)</span>
             </div>
 
-            <div className='flex items-center justify-between py-2'>
-              <span className='text-sm text-base-content/60'>Tecnologias</span>
-              <span className='text-sm font-semibold'>React + TypeScript + DaisyUI</span>
+            <div className='flex items-center justify-between'>
+              <span className='text-sm text-base-content/60'>Veja mais em</span>
+              <a
+                href='https://github.com/edinelsonslima/sabor-brasa-v0/releases'
+                target='_blank'
+                rel='noopener noreferrer'
+                className='text-sm font-semibold'
+              >
+                Atualizações <LinkIcon size={14} className='inline ml-1' />
+              </a>
             </div>
           </div>
         </Card>
