@@ -1,4 +1,3 @@
-import { productStore } from '@/hooks/useProducts'
 import { saleStore } from '@/hooks/useSales'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 import { Banknote, Pencil, Smartphone, Trash2 } from 'lucide-react'
@@ -20,35 +19,25 @@ export function SaleItem({ saleId, onDelete }: SaleItemProps) {
     return null
   }
 
-  const getProducts = () => {
-    return (sale.products?.regular ?? [])
-      .map((p) => {
-        const product = productStore.action.get(p.id)
-        return product ? { ...product, quantity: p.quantity } : null
-      })
-      .concat(sale.products?.custom ?? [])
-      .filter((p) => !!p)
-  }
-
   return (
     <Collapse icon='arrow'>
       <Collapse.Summary>
-        <p className='text-sm font-semibold'>Venda • {getProducts()?.length ?? 0} itens</p>
+        <p className='text-sm font-semibold'>{sale.name} • {sale.items.reduce((a, i) => a + i.quantity, 0)} itens · {formatCurrency(sale.total)}</p>
 
         <div className='flex items-center justify-start gap-3 text-xs text-base-content/60 mt-1'>
-          <span>{formatDateTime(sale.date)}</span>
+          <span>{formatDateTime(new Date(sale.closedAt).toISOString())}</span>
 
-          {sale.price?.cash > 0 && (
+          {sale.cash > 0 && (
             <span className='flex items-center gap-1'>
               <Banknote size={12} className='text-warning' />
-              {formatCurrency(sale.price.cash)}
+              {formatCurrency(sale.cash)}
             </span>
           )}
 
-          {sale.price?.pix > 0 && (
+          {sale.pix > 0 && (
             <span className='flex items-center gap-1'>
               <Smartphone size={12} className='text-success' />
-              {formatCurrency(sale.price.pix)}
+              {formatCurrency(sale.pix)}
             </span>
           )}
         </div>
@@ -56,20 +45,20 @@ export function SaleItem({ saleId, onDelete }: SaleItemProps) {
 
       <Collapse.Content className='space-y-4'>
         <div className='space-y-1 py-3 border-t border-b border-dashed border-base-300'>
-          {getProducts()?.map((product) => (
-            <div key={product.id} className='flex items-center justify-between text-sm'>
-              <span className='truncate'>
-                {product.name} ({product.unit === 'litro' ? 'L' : 'un.'})
-              </span>
+          {sale.items.map((item, index) => (
+            <div key={`${item.productId ?? item.name}-${index}`} className='flex items-center justify-between text-sm'>
+              <span className='truncate'>{item.name}</span>
               <span className='flex-1 mx-2 border-b border-dotted border-base-content/20 translate-y-1' />
-              <span className='text-base-content/60'>{product.quantity}x</span>
+              <span className='text-base-content/60 font-mono'>
+                {item.quantity}x {formatCurrency(item.unitPrice)}
+              </span>
             </div>
           ))}
         </div>
 
         <div className='flex justify-end gap-2'>
           <Link
-            to={`/comandas/${sale.id}/editar`}
+            to={`/vendas/${sale.id}/editar`}
             className={Button.getStyle(undefined, {
               appearance: 'soft',
               size: 'sm',

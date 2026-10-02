@@ -8,6 +8,8 @@ import { CurrencyInput } from '@/components/currency/Input'
 import { SaleCelebration } from '@/components/sales/celebration'
 import { orderStore } from '@/hooks/useOrders'
 import { productStore } from '@/hooks/useProducts'
+import { saleStore } from '@/hooks/useSales'
+import { itemsTotal, snapshotItems, splitPayment } from '@/lib/sales'
 import { cn, formatCurrency } from '@/lib/utils'
 import type { PaymentMethod } from '@/types'
 import { AnimatePresence, m } from 'framer-motion'
@@ -29,7 +31,7 @@ export function Component() {
   const orders = orderStore.useStore((state) => state)
   const order = orders.find((order) => order.id === params.id)
 
-  const isOpen = order?.status === 'open'
+  const isOpen = !!order
   const totalPaymentCombined = cashAmount + pixAmount
 
   const orderProducts = order?.products.map((prd) => {
@@ -71,37 +73,30 @@ export function Component() {
       return
     }
 
-    let cash = 0
-    let pix = 0
-
-    if (paymentMethod === 'dinheiro') {
-      cash = total
-    }
-    if (paymentMethod === 'pix') {
-      pix = total
-    }
-    if (paymentMethod === 'combinado') {
-      cash = cashAmount
-      pix = pixAmount
-    }
-
-    setCashAmount(0)
-    setPixAmount(0)
-    setPaymentMethod('dinheiro')
-
-    celebration.current?.celebrate()
-
     if (!order?.id) {
       toast.error('Comanda não encontrada')
       return
     }
 
-    orderStore.action.update(order.id, {
-      price: { cash, pix, total },
-      paymentMethod: paymentMethod,
-      status: 'closed',
-      closedAt: new Date().getTime(),
+    const items = snapshotItems(order.products)
+    const { cash, pix } = splitPayment(paymentMethod, total, cashAmount, pixAmount)
+
+    saleStore.action.add({
+      orderId: order.id,
+      name: order.name,
+      items,
+      paymentMethod,
+      total: itemsTotal(items),
+      cash,
+      pix,
+      closedAt: Date.now(),
     })
+    orderStore.action.delete(order.id, { silent: true })
+
+    setCashAmount(0)
+    setPixAmount(0)
+    setPaymentMethod('dinheiro')
+    celebration.current?.celebrate()
 
     toast.success('Comanda fechada!')
     setTimeout(() => navigate('/comandas'), 600)
@@ -127,7 +122,7 @@ export function Component() {
         subtitle={
           isOpen
             ? `Aberta às ${new Date(order.openedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
-            : `Fechada em ${order.closedAt ? new Date(order.closedAt).toLocaleString('pt-BR') : ''}`
+            : ''
         }
       />
 
