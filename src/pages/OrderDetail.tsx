@@ -89,7 +89,7 @@ export function Component() {
       total: itemsTotal(items),
       cash,
       pix,
-      closedAt: Date.now(),
+      closedAt: new Date().getTime(),
     })
     orderStore.action.delete(order.id, { silent: true })
 
