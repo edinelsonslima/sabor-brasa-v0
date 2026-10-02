@@ -114,3 +114,9 @@ export function createStyle<C extends VariantConfig>(config: C) {
 
   return build
 }
+
+/** Data local (YYYY-MM-DD) de um timestamp — evita o deslocamento de fuso do toISOString */
+export function localDateKey(ts: number | Date = Date.now()) {
+  const d = new Date(ts)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}

@@ -24,21 +24,38 @@ export interface OrderProduct {
   quantity: number
 }
 
+/** Comanda aberta. Ao fechar, vira uma `Sale` e sai do orderStore. */
 export interface Order {
   id: string
   name: string
   products: OrderProduct[]
-  status: 'open' | 'closed'
   openedAt: number
-  paymentMethod?: PaymentMethod
-  price?: { total: number; cash: number; pix: number }
-  closedAt?: number
+}
+
+export interface SaleItem {
+  productId: string | null // null se o produto foi excluído depois
+  name: string // snapshot do nome no momento da venda
+  unitPrice: number // snapshot do preço no momento da venda
+  quantity: number
+}
+
+export interface Sale {
+  id: string
+  orderId: string
+  name: string
+  items: SaleItem[]
+  paymentMethod: PaymentMethod
+  total: number
+  cash: number
+  pix: number
+  closedAt: number
 }
 
 export interface Employee {
   id: string
   name: string
   avatarUrl?: string
+  /** Valores pré-configurados de diária: [0] = meia diária, [1] = diária cheia */
   defaultRates: [number, number]
 }
 
