@@ -19,9 +19,6 @@ type State = {
   month: { saleId: string[]; total: number; pix: number; cash: number }
 }
 
-/**
- * @deprecated Use `orderStore` instead. The `saleStore` is kept for backward compatibility and will be removed in future versions.
- */
 export const saleStore = createStore<State, Actions>({
   persist: { key: 'sales' },
 
