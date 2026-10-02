@@ -1,56 +1,63 @@
 import { logAudit } from '@/lib/audit'
-import { generateUUID } from '@/lib/utils'
-import type { Order } from '@/types'
+import { formatCurrency, generateUUID, localDateKey } from '@/lib/utils'
+import type { Sale, SaleItem } from '@/types'
 import { productStore } from './useProducts'
 import { createStore } from './useStore'
 
-type CreateSale = Omit<Order, 'id' | 'timestamp'>
+export type CreateSale = Omit<Sale, 'id'>
+
+type Stats = { saleId: string[]; total: number; pix: number; cash: number }
 
 type Actions = {
-  get: (id: string) => Order | undefined
-  add: (data: CreateSale) => string
+  get: (id: string) => Sale | undefined
+  /** `skipStock` só para importação de dados legados que nunca mexeram no estoque */
+  add: (data: CreateSale, options?: { skipStock?: boolean }) => string
   update: (id: string, data: Partial<CreateSale>) => void
   delete: (id: string) => void
+  /** Recalcula today/month (ex.: virada do dia com o app aberto) */
+  refreshStats: () => void
 }
 
 type State = {
-  sales: Order[]
-  today: { saleId: string[]; total: number; pix: number; cash: number }
-  month: { saleId: string[]; total: number; pix: number; cash: number }
+  sales: Sale[]
+  today: Stats
+  month: Stats
+}
+
+/** direction -1 = baixa no estoque (venda); +1 = devolve ao estoque */
+function applyStock(items: SaleItem[], direction: 1 | -1) {
+  for (const item of items) {
+    if (item.productId) {
+      productStore.action.changeStock(item.productId, direction * item.quantity)
+    }
+  }
+}
+
+function withStats(sales: Sale[]): State {
+  return { sales, today: calculateStats(sales, 'today'), month: calculateStats(sales, 'month') }
 }
 
 export const saleStore = createStore<State, Actions>({
   persist: { key: 'sales' },
 
-  createState: () => ({
-    sales: [],
-    today: { saleId: [], total: 0, pix: 0, cash: 0 },
-    month: { saleId: [], total: 0, pix: 0, cash: 0 },
-  }),
+  createState: () => withStats([]),
 
   createActions: (set, get) => ({
-    get: (id) => {
-      return get().sales.find((s) => s.id === id)
-    },
+    get: (id) => get().sales.find((s) => s.id === id),
 
-    add: (data) => {
-      const total = data.price.total
-      const regular = data.products.regular.reduce((s, p) => s + p.quantity, 0)
-      const custom = data.products.custom.reduce((s, p) => s + p.quantity, 0)
-      const count = regular + custom
-
+    add: (data, options) => {
       const id = generateUUID()
-      const sales = [{ ...data, id, timestamp: new Date().getTime() }, ...get().sales]
+      const sale: Sale = { ...data, id }
+      const sales = [sale, ...get().sales].sort((a, b) => b.closedAt - a.closedAt)
 
-      productStore.action.changeStock(data.products, -1)
+      if (!options?.skipStock) {
+        applyStock(sale.items, -1)
+      }
 
-      set({
-        sales: sales,
-        today: calculateStats(sales, 'today'),
-        month: calculateStats(sales, 'month'),
-      })
+      set(withStats(sales))
 
-      logAudit('sale_created', `Venda de ${count} itens - Total: R$ ${total}`)
+      const count = sale.items.reduce((s, i) => s + i.quantity, 0)
+      logAudit('sale_created', `Venda "${sale.name}" de ${count} itens - Total: ${formatCurrency(sale.total)}`)
 
       return id
     },
@@ -58,72 +65,53 @@ export const saleStore = createStore<State, Actions>({
     update: (id, data) => {
       const previous = get().sales.find((s) => s.id === id)
 
-      if (previous && data.products) {
-        productStore.action.changeStock(previous.products, 1)
-        productStore.action.changeStock(data.products, -1)
+      if (!previous) {
+        return
       }
 
-      const currentSales = get().sales.map((s) => {
-        return s.id === id ? { ...s, ...data } : s
-      })
+      if (data.items) {
+        applyStock(previous.items, 1)
+        applyStock(data.items, -1)
+      }
 
-      set({
-        sales: currentSales,
-        today: calculateStats(currentSales, 'today'),
-        month: calculateStats(currentSales, 'month'),
-      })
+      set(withStats(get().sales.map((s) => (s.id === id ? { ...s, ...data, id } : s))))
 
-      logAudit('sale_updated', `Venda editada - ID: ${id}`)
+      logAudit('sale_updated', `Venda editada: ${previous.name}`)
     },
 
     delete: (id) => {
-      const sales = get().sales
-      const sale = sales.find((s) => s.id === id)
-      const total = sale?.price?.total ?? '?'
+      const sale = get().sales.find((s) => s.id === id)
 
-      if (sale) {
-        productStore.action.changeStock(sale.products, 1)
+      if (!sale) {
+        return
       }
 
-      const currentSales = sales.filter((s) => s.id !== id)
+      applyStock(sale.items, 1)
+      set(withStats(get().sales.filter((s) => s.id !== id)))
 
-      set({
-        sales: currentSales,
-        today: calculateStats(currentSales, 'today'),
-        month: calculateStats(currentSales, 'month'),
-      })
-
-      logAudit('sale_deleted', `Venda excluída - Total: R$ ${total}`)
+      logAudit('sale_deleted', `Venda excluída: ${sale.name} - Total: ${formatCurrency(sale.total)}`)
     },
+
+    refreshStats: () => set(withStats(get().sales)),
   }),
 })
 
-function calculateStats(sales: Order[], period: 'today' | 'month') {
-  const now = new Date()
+function calculateStats(sales: Sale[], period: 'today' | 'month'): Stats {
+  const today = localDateKey()
+  const prefix = period === 'today' ? today : today.slice(0, 7)
 
-  const month = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`
-  const today = now.toISOString().split('T')[0]
+  const stats: Stats = { saleId: [], total: 0, pix: 0, cash: 0 }
 
-  let pix = 0
-  let cash = 0
-  let total = 0
+  for (const s of sales) {
+    if (!localDateKey(s.closedAt).startsWith(prefix)) {
+      continue
+    }
 
-  const saleId = sales
-    .filter((s) => s.date.startsWith(period === 'today' ? today : month))
-    .map((s) => {
-      const saleTotal = s.price?.total ?? 0
-      total += saleTotal
+    stats.saleId.push(s.id)
+    stats.total += s.total
+    stats.pix += s.pix
+    stats.cash += s.cash
+  }
 
-      if (s.paymentMethod === 'pix') {
-        pix += saleTotal
-      }
-
-      if (s.paymentMethod === 'dinheiro') {
-        cash += saleTotal
-      }
-
-      return s.id
-    })
-
-  return { saleId, total, pix, cash }
+  return stats
 }
