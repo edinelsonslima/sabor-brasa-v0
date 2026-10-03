@@ -17,6 +17,8 @@ export interface Product {
   imageUrl?: string
   category?: ProductCategory
   stock?: number
+  /** Custo médio ponderado atual (default 0) */
+  averageCost: number
 }
 
 export interface OrderProduct {
@@ -36,6 +38,7 @@ export interface SaleItem {
   productId: string | null // null se o produto foi excluído depois
   name: string // snapshot do nome no momento da venda
   unitPrice: number // snapshot do preço no momento da venda
+  unitCost: number // snapshot do custo médio no momento da venda
   quantity: number
 }
 
@@ -79,4 +82,14 @@ export interface Expense {
   amount: number
   date: string
   timestamp: number
+}
+
+export interface StockEntry {
+  id: string
+  productId: string
+  quantity: number
+  unitCost: number
+  totalCost: number
+  date: number // timestamp
+  expenseId?: string // referência pra despesa criada automaticamente
 }
