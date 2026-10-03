@@ -22,7 +22,7 @@ export function SaleItem({ saleId, onDelete }: SaleItemProps) {
   return (
     <Collapse icon='arrow'>
       <Collapse.Summary>
-        <p className='text-sm font-semibold'>{sale.name} • {sale.items.reduce((a, i) => a + i.quantity, 0)} itens · {formatCurrency(sale.total)}</p>
+        <p className='text-sm font-semibold truncate min-w-0'>{sale.name} • {sale.items.reduce((a, i) => a + i.quantity, 0)} itens · {formatCurrency(sale.total)}</p>
 
         <div className='flex items-center justify-start gap-3 text-xs text-base-content/60 mt-1'>
           <span>{formatDateTime(new Date(sale.closedAt).toISOString())}</span>
