@@ -156,7 +156,8 @@ function StockEntryModal({ product }: { product: Product }) {
   const unitCost = quantity > 0 ? totalCost / quantity : 0
   const stock = Math.max(0, product.stock ?? 0)
   const avg = product.averageCost ?? 0
-  const newAvg = quantity > 0 ? (stock === 0 ? unitCost : (stock * avg + quantity * unitCost) / (stock + quantity)) : avg
+  const newAvg =
+    quantity > 0 ? (stock === 0 ? unitCost : (stock * avg + quantity * unitCost) / (stock + quantity)) : avg
 
   const reset = () => {
     setQuantity(0)
@@ -241,8 +242,11 @@ function StockEntryModal({ product }: { product: Product }) {
                 variant='primary'
                 onClick={(e) => {
                   vibrate(10)
-                  if (handleSave()) close()
-                  else e.preventDefault()
+                  if (handleSave()) {
+                    close()
+                  } else {
+                    e.preventDefault()
+                  }
                 }}
               >
                 Lançar
@@ -284,7 +288,9 @@ export function Component() {
     }
 
     const created = productStore.action.add({ name: name.trim(), unit, category, price, stock: 0 })
-    if (stock > 0) stockEntryStore.action.add(created.id, stock, stockCost / stock)
+    if (stock > 0) {
+      stockEntryStore.action.add(created.id, stock, stockCost / stock)
+    }
     toast.success('Produto adicionado!')
     setName('')
     setPrice(0)
@@ -357,7 +363,12 @@ export function Component() {
 
         {stock > 0 && (
           <div className='space-y-2'>
-            <CurrencyInput value={stockCost} label='Total pago pelo estoque (R$)' onValueChange={setStockCost} placeholder='0,00' />
+            <CurrencyInput
+              value={stockCost}
+              label='Total pago pelo estoque (R$)'
+              onValueChange={setStockCost}
+              placeholder='0,00'
+            />
             <p className='text-xs text-base-content/60'>
               Custo por unidade: {formatCurrency(stockCost / stock)} · entra automaticamente nos Gastos
             </p>
@@ -369,60 +380,52 @@ export function Component() {
         </Button>
       </m.form>
 
-      <div>
+      <div className='space-y-2'>
         <h3 className='text-sm font-semibold text-base-content/60 uppercase tracking-wider mb-3'>
           Catálogo ({products.length})
         </h3>
 
-        <Card className={{ root: 'overflow-hidden', body: 'divide-y divide-base-content/20' }}>
-          {products.map((p) => (
-            <div key={p.id} className='flex items-center justify-between gap-2 py-3'>
-              <div className='flex items-center gap-3 min-w-0 flex-1'>
-                <Package size={16} className='text-primary shrink-0' />
+        {products.map((p) => (
+          <Card key={p.id} className='flex flex-col gap-1'>
+            <div className='flex items-center justify-between'>
+              <p className='text-lg font-semibold truncate'>{p.name}</p>
 
-                <div className='min-w-0'>
-                  <p className='text-sm font-semibold truncate'>{p.name}</p>
-                  <div className='flex items-center gap-2 flex-wrap'>
-                    <CategoryBadge category={p.category} />
-                    <span
-                      className={cn(
-                        'text-xs',
-                        (p.stock ?? 0) <= 0 ? 'text-error font-semibold' : 'text-base-content/60',
-                      )}
-                    >
-                      Estoque: {p.stock ?? 0} {p.unit === 'litro' ? 'L' : 'un'}
-                    </span>
-                  </div>
-                </div>
+              <span className='flex gap-2 items-baseline'>
+                <p className='text-xs text-base-content/60 font-mono' title='Custo médio ponderado'>
+                  custo {formatCurrency(p.averageCost ?? 0)}
+                </p>
+                <p className='text-sm font-bold font-mono'>{formatCurrency(p.price)}</p>
+              </span>
+            </div>
+
+            <div className='flex items-start justify-between gap-3'>
+              <div className='flex items-center gap-2 flex-wrap'>
+                <CategoryBadge category={p.category} />
+                <span
+                  className={cn('text-xs', (p.stock ?? 0) <= 0 ? 'text-error font-semibold' : 'text-base-content/60')}
+                >
+                  Estoque: {p.stock ?? 0} {p.unit === 'litro' ? 'L' : 'un'}
+                </span>
               </div>
 
-              <div className='flex items-center gap-4'>
-                <div className='text-right'>
-                  <p className='text-sm font-bold font-mono'>{formatCurrency(p.price)}</p>
-                  <p className='text-[11px] text-base-content/60 font-mono' title='Custo médio ponderado'>
-                    custo {formatCurrency(p.averageCost ?? 0)}
-                  </p>
-                </div>
-
-                <div className='flex items-center gap-2'>
-                  <StockEntryModal product={p} />
-                  <ProductEditModal product={p} />
-                  <Button.Confirm
-                    size='sm'
-                    variant='error'
-                    appearance='soft'
-                    onConfirm={() => {
-                      productStore.action.delete(p.id)
-                      toast.info('Produto removido')
-                    }}
-                  >
-                    <Trash2 size={14} />
-                  </Button.Confirm>
-                </div>
+              <div className='flex items-center gap-2'>
+                <StockEntryModal product={p} />
+                <ProductEditModal product={p} />
+                <Button.Confirm
+                  size='sm'
+                  variant='error'
+                  appearance='soft'
+                  onConfirm={() => {
+                    productStore.action.delete(p.id)
+                    toast.info('Produto removido')
+                  }}
+                >
+                  <Trash2 size={14} />
+                </Button.Confirm>
               </div>
             </div>
-          ))}
-        </Card>
+          </Card>
+        ))}
       </div>
     </>
   )
