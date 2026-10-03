@@ -8,8 +8,9 @@ import { employeeStore } from '@/hooks/useEmployees'
 import { paymentStore } from '@/hooks/usePayments'
 import { saleStore } from '@/hooks/useSales'
 import { toast } from '@/lib/toast'
+import { salesMargin } from '@/lib/sales'
 import { cn, formatCurrency, localDateKey } from '@/lib/utils'
-import { Banknote, DollarSign, Minus, Smartphone, TrendingDown, TrendingUp } from 'lucide-react'
+import { Banknote, PiggyBank, DollarSign, Minus, Smartphone, TrendingDown, TrendingUp } from 'lucide-react'
 import type { ComponentProps } from 'react'
 import { useState } from 'react'
 
@@ -63,6 +64,7 @@ export function Component() {
     [],
   )
   const net = totalSales - totalPayments
+  const margin = salesMargin(daySales)
 
   const currentDateSelected = {
     day: parseInt(date.split('-')[2], 10),
@@ -127,6 +129,14 @@ export function Component() {
           icon: 'text-base-content/20 size-10',
           value: cn('text-2xl sm:text-3xl font-extrabold mt-1 font-mono', net >= 0 ? 'text-success' : 'text-error'),
         }}
+      />
+
+      <Stat
+        title='Margem estimada do dia'
+        subtitle='Preço − custo médio dos itens vendidos. Diferente do lucro de caixa: não conta gastos nem diárias.'
+        value={margin}
+        icon={{ element: PiggyBank, variant: 'info' }}
+        variant='info'
       />
 
       {totalPaymentsByEmployee.length > 0 && (

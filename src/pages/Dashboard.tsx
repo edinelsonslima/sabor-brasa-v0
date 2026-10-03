@@ -7,8 +7,9 @@ import { authStore } from '@/hooks/useAuth'
 import { expenseStore, sumExpenses } from '@/hooks/useExpenses'
 import { paymentStore } from '@/hooks/usePayments'
 import { saleStore } from '@/hooks/useSales'
+import { salesMargin } from '@/lib/sales'
 import { cn, formatCurrency } from '@/lib/utils'
-import { Banknote, DollarSign, Wallet, Minus, Smartphone, TrendingDown, TrendingUp } from 'lucide-react'
+import { Banknote, PiggyBank, DollarSign, Wallet, Minus, Smartphone, TrendingDown, TrendingUp } from 'lucide-react'
 
 export function Component() {
   const user = authStore.useStore((state) => state.user)
@@ -22,6 +23,10 @@ export function Component() {
   const expenses = expenseStore.useStore((state) => state.expenses)
   const todayExpenses = sumExpenses(expenses, 'today')
   const monthExpenses = sumExpenses(expenses, 'month')
+
+  const allSales = saleStore.useStore((state) => state.sales)
+  const todayMargin = salesMargin(allSales.filter((s) => todaySales.saleId.includes(s.id)))
+  const monthMargin = salesMargin(allSales.filter((s) => monthSales.saleId.includes(s.id)))
 
   const todayNet = todaySales.total - todayPayments.total - todayExpenses
   const monthNet = monthSales.total - monthPayments.total - monthExpenses
@@ -98,6 +103,14 @@ export function Component() {
         }}
       />
 
+      <Stat
+        title='Margem estimada hoje'
+        subtitle='Preço − custo médio dos itens vendidos. Diferente do lucro de caixa: não conta gastos nem diárias.'
+        value={todayMargin}
+        icon={{ element: PiggyBank, variant: 'info' }}
+        variant='info'
+      />
+
       <Card appearance='ghost'>
         <Card.Title>ESTE MÊS</Card.Title>
 
@@ -142,6 +155,14 @@ export function Component() {
             monthNet >= 0 ? 'text-success' : 'text-error',
           ),
         }}
+      />
+
+      <Stat
+        title='Margem estimada do mês'
+        subtitle='Preço − custo médio dos itens vendidos. Diferente do lucro de caixa: não conta gastos nem diárias.'
+        value={monthMargin}
+        icon={{ element: PiggyBank, variant: 'info' }}
+        variant='info'
       />
 
       <Card appearance='ghost'>

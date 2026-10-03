@@ -6,10 +6,11 @@ import { Modal } from '@/components/_ui/modal'
 import { toast } from '@/components/_ui/toast'
 import { CurrencyInput } from '@/components/currency/Input'
 import { productStore } from '@/hooks/useProducts'
+import { stockEntryStore } from '@/hooks/useStockEntries'
 import { cn, formatCurrency, vibrate } from '@/lib/utils'
 import type { Product, ProductCategory } from '@/types'
 import { m } from 'framer-motion'
-import { Package, Pencil, Plus, Trash2 } from 'lucide-react'
+import { PackagePlus, Package, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 const CATEGORY_LABEL: Record<ProductCategory, string> = {
@@ -35,14 +36,12 @@ function ProductEditModal({ product }: { product: Product }) {
   const [category, setCategory] = useState<ProductCategory>(product.category ?? 'bebida')
   const [unit, setUnit] = useState<'unidade' | 'litro'>(product.unit)
   const [price, setPrice] = useState(product.price)
-  const [refill, setRefill] = useState(0)
 
   const reset = () => {
     setName(product.name)
     setCategory(product.category ?? 'bebida')
     setUnit(product.unit)
     setPrice(product.price)
-    setRefill(0)
   }
 
   const handleSave = () => {
@@ -61,7 +60,6 @@ function ProductEditModal({ product }: { product: Product }) {
       category,
       unit,
       price,
-      stock: (product.stock ?? 0) + Math.max(0, refill),
     })
     toast.success('Produto atualizado!')
     return true
@@ -123,29 +121,6 @@ function ProductEditModal({ product }: { product: Product }) {
           <CurrencyInput value={price} label='Preço (R$)' onValueChange={setPrice} placeholder='0,00' />
         </div>
 
-        <div className='space-y-2'>
-          <div className='flex items-center justify-between'>
-            <Label>Adicionar ao estoque</Label>
-            <span className='text-xs text-base-content/60'>
-              Atual: {product.stock ?? 0} {product.unit === 'litro' ? 'L' : 'un'}
-            </span>
-          </div>
-          <input
-            type='number'
-            min={0}
-            step={1}
-            value={refill || ''}
-            onChange={(e) => setRefill(Math.max(0, parseInt(e.target.value) || 0))}
-            placeholder='0'
-            className='daisy-input w-full font-mono'
-          />
-          {refill > 0 && (
-            <p className='text-xs text-base-content/60'>
-              Novo estoque: {(product.stock ?? 0) + refill} {product.unit === 'litro' ? 'L' : 'un'}
-            </p>
-          )}
-        </div>
-
         <Modal.Actions>
           {({ close }) => (
             <>
@@ -174,6 +149,112 @@ function ProductEditModal({ product }: { product: Product }) {
   )
 }
 
+function StockEntryModal({ product }: { product: Product }) {
+  const [quantity, setQuantity] = useState(0)
+  const [totalCost, setTotalCost] = useState(0)
+  const unitLabel = product.unit === 'litro' ? 'L' : 'un'
+  const unitCost = quantity > 0 ? totalCost / quantity : 0
+  const stock = Math.max(0, product.stock ?? 0)
+  const avg = product.averageCost ?? 0
+  const newAvg = quantity > 0 ? (stock === 0 ? unitCost : (stock * avg + quantity * unitCost) / (stock + quantity)) : avg
+
+  const reset = () => {
+    setQuantity(0)
+    setTotalCost(0)
+  }
+
+  const handleSave = () => {
+    if (quantity <= 0) {
+      toast.error('Informe a quantidade')
+      return false
+    }
+    if (totalCost <= 0) {
+      toast.error('Informe quanto pagou na compra')
+      return false
+    }
+    stockEntryStore.action.add(product.id, quantity, unitCost)
+    toast.success('Estoque lançado e gasto registrado!')
+    return true
+  }
+
+  return (
+    <Modal className='w-full'>
+      <Modal.Trigger
+        as='button'
+        aria-label='Lançar estoque'
+        className={Button.getStyle(undefined, { size: 'sm', appearance: 'soft', variant: 'primary' })}
+        onClick={reset}
+      >
+        <PackagePlus size={14} />
+      </Modal.Trigger>
+
+      <form className='space-y-4'>
+        <Modal.Title>
+          <h3 className='font-bold'>Lançar estoque · {product.name}</h3>
+        </Modal.Title>
+
+        <div className='grid grid-cols-2 gap-4'>
+          <div className='space-y-2'>
+            <Label>Quantidade ({unitLabel})</Label>
+            <input
+              type='number'
+              min={0}
+              step={1}
+              inputMode='numeric'
+              value={quantity || ''}
+              onChange={(e) => setQuantity(Math.max(0, parseInt(e.target.value) || 0))}
+              placeholder='0'
+              className='daisy-input w-full font-mono'
+            />
+          </div>
+          <div className='space-y-2'>
+            <CurrencyInput value={totalCost} label='Total pago (R$)' onValueChange={setTotalCost} placeholder='0,00' />
+          </div>
+        </div>
+
+        <div className='rounded-lg bg-base-200/60 p-3 text-sm space-y-1'>
+          <div className='flex justify-between'>
+            <span className='text-base-content/60'>Custo por {unitLabel}</span>
+            <span className='font-mono font-bold'>{formatCurrency(unitCost)}</span>
+          </div>
+          <div className='flex justify-between'>
+            <span className='text-base-content/60'>Custo médio: {formatCurrency(avg)} →</span>
+            <span className='font-mono font-bold'>{formatCurrency(newAvg)}</span>
+          </div>
+          <div className='flex justify-between'>
+            <span className='text-base-content/60'>Estoque: {product.stock ?? 0} →</span>
+            <span className='font-mono font-bold'>
+              {(product.stock ?? 0) + quantity} {unitLabel}
+            </span>
+          </div>
+          <p className='text-xs text-base-content/50 pt-1'>O valor pago entra automaticamente nos Gastos.</p>
+        </div>
+
+        <Modal.Actions>
+          {({ close }) => (
+            <>
+              <Button type='button' appearance='ghost' onClick={close}>
+                Cancelar
+              </Button>
+              <Button
+                type='button'
+                variant='primary'
+                onClick={(e) => {
+                  vibrate(10)
+                  if (handleSave()) close()
+                  else e.preventDefault()
+                }}
+              >
+                Lançar
+              </Button>
+            </>
+          )}
+        </Modal.Actions>
+      </form>
+    </Modal>
+  )
+}
+
 export function Component() {
   const products = productStore.useStore((state) => state)
 
@@ -182,6 +263,7 @@ export function Component() {
   const [category, setCategory] = useState<ProductCategory>('bebida')
   const [price, setPrice] = useState(0)
   const [stock, setStock] = useState(0)
+  const [stockCost, setStockCost] = useState(0)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -196,11 +278,18 @@ export function Component() {
       return
     }
 
-    productStore.action.add({ name: name.trim(), unit, category, price, stock })
+    if (stock > 0 && stockCost <= 0) {
+      toast.error('Informe quanto pagou pelo estoque inicial')
+      return
+    }
+
+    const created = productStore.action.add({ name: name.trim(), unit, category, price, stock: 0 })
+    if (stock > 0) stockEntryStore.action.add(created.id, stock, stockCost / stock)
     toast.success('Produto adicionado!')
     setName('')
     setPrice(0)
     setStock(0)
+    setStockCost(0)
   }
 
   return (
@@ -266,12 +355,12 @@ export function Component() {
           </div>
         </div>
 
-        {stock > 0 && price > 0 && (
-          <div className='flex items-center justify-between rounded-lg bg-base-200/60 p-3 text-sm'>
-            <span className='text-base-content/60'>
-              Valor total em estoque ({stock} × {formatCurrency(price)})
-            </span>
-            <span className='font-mono font-bold'>{formatCurrency(price * stock)}</span>
+        {stock > 0 && (
+          <div className='space-y-2'>
+            <CurrencyInput value={stockCost} label='Total pago pelo estoque (R$)' onValueChange={setStockCost} placeholder='0,00' />
+            <p className='text-xs text-base-content/60'>
+              Custo por unidade: {formatCurrency(stockCost / stock)} · entra automaticamente nos Gastos
+            </p>
           </div>
         )}
 
@@ -308,9 +397,15 @@ export function Component() {
               </div>
 
               <div className='flex items-center gap-4'>
-                <p className='text-sm font-bold font-mono'>{formatCurrency(p.price)}</p>
+                <div className='text-right'>
+                  <p className='text-sm font-bold font-mono'>{formatCurrency(p.price)}</p>
+                  <p className='text-[11px] text-base-content/60 font-mono' title='Custo médio ponderado'>
+                    custo {formatCurrency(p.averageCost ?? 0)}
+                  </p>
+                </div>
 
                 <div className='flex items-center gap-2'>
+                  <StockEntryModal product={p} />
                   <ProductEditModal product={p} />
                   <Button.Confirm
                     size='sm'
