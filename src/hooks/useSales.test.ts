@@ -26,6 +26,7 @@ describe('saleStore', () => {
           productId: product.id,
           name: product.name,
           unitPrice: product.price,
+          unitCost: 0,
           quantity: 2,
         },
       ],
