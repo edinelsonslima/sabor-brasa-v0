@@ -82,10 +82,11 @@ export function convertLegacySale(s: LegacySale, productName: (id: string) => { 
         productId: product ? p.id : null,
         name: product?.name ?? 'Produto removido',
         unitPrice: product?.price ?? 0,
+        unitCost: 0,
         quantity: p.quantity,
       }
     }),
-    ...(s.products?.custom ?? []).map((p) => ({ productId: null, name: p.name, unitPrice: p.price, quantity: p.quantity })),
+    ...(s.products?.custom ?? []).map((p) => ({ productId: null, name: p.name, unitPrice: p.price, unitCost: 0, quantity: p.quantity })),
   ]
   const total = s.price?.total ?? 0
   const method = s.paymentMethod ?? 'dinheiro'

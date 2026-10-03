@@ -11,6 +11,7 @@ export function snapshotItems(products: OrderProduct[]): SaleItem[] {
         productId: product ? p.productId : null,
         name: product?.name ?? 'Produto removido',
         unitPrice: product?.price ?? 0,
+        unitCost: product?.averageCost ?? 0,
         quantity: p.quantity,
       }
     })
@@ -24,4 +25,12 @@ export function splitPayment(method: PaymentMethod, total: number, cash = 0, pix
   if (method === 'dinheiro') return { cash: total, pix: 0 }
   if (method === 'pix') return { cash: 0, pix: total }
   return { cash, pix }
+}
+
+/** Margem estimada: soma de (preço − custo) × quantidade dos itens vendidos */
+export function salesMargin(sales: { items: SaleItem[] }[]) {
+  return sales.reduce(
+    (acc, s) => acc + s.items.reduce((a, i) => a + (i.unitPrice - (i.unitCost ?? 0)) * i.quantity, 0),
+    0,
+  )
 }

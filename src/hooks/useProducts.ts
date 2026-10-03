@@ -3,7 +3,7 @@ import { generateUUID } from '@/lib/utils'
 import type { Product } from '@/types'
 import { createStore } from './useStore'
 
-type CreateProduct = Omit<Product, 'id'>
+type CreateProduct = Omit<Product, 'id' | 'averageCost'> & { averageCost?: number }
 
 type Actions = {
   get: (id: string) => Product | undefined
@@ -11,6 +11,7 @@ type Actions = {
   update: (id: string, data: Partial<CreateProduct>) => void
   delete: (id: string) => void
   changeStock: (productId: string, quantity: number) => void
+  receiveStock: (productId: string, quantity: number, unitCost: number) => void
 }
 
 export const productStore = createStore<Product[], Actions>({
@@ -29,6 +30,7 @@ export const productStore = createStore<Product[], Actions>({
         id: generateUUID(),
         category: data.category ?? 'bebida',
         stock: data.stock ?? 0,
+        averageCost: data.averageCost ?? 0,
       }
 
       set((prev) => [productItem, ...prev])
@@ -50,6 +52,7 @@ export const productStore = createStore<Product[], Actions>({
             ...data,
             category: data.category ?? p.category ?? 'bebida',
             stock: data.stock ?? p.stock ?? 0,
+            averageCost: data.averageCost ?? p.averageCost ?? 0,
           }
         }),
       )
@@ -82,6 +85,19 @@ export const productStore = createStore<Product[], Actions>({
 
         return [...products]
       })
+    },
+
+    receiveStock: (productId, quantity, unitCost) => {
+      set((prev) =>
+        prev.map((p) => {
+          if (p.id !== productId) return p
+          const currentStock = Math.max(0, p.stock ?? 0)
+          const currentCost = p.averageCost ?? 0
+          const averageCost =
+            currentStock === 0 ? unitCost : (currentStock * currentCost + quantity * unitCost) / (currentStock + quantity)
+          return { ...p, stock: (p.stock ?? 0) + quantity, averageCost }
+        }),
+      )
     },
   }),
 })
