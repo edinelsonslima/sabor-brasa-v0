@@ -72,11 +72,11 @@ export function Component() {
             {open.map((order) => (
               <Link key={order.id} to={`/comandas/${order.id}`} className={Card.getStyle('min-w-0 flex-1 p-3')}>
                 <div className='flex items-center justify-between gap-1'>
-                  <span className='flex items-center gap-1'>
+                  <span className='flex items-center gap-1 flex-1 min-w-0'>
                     <ReceiptTextIcon className='text-primary shrink-0' size={16} />
                     <p className='font-semibold truncate text-lg'>{order.name}</p>
                   </span>
-                  <span className='font-mono font-bold'>{formatCurrency(getOrderTotal(order.id))}</span>
+                  <span className='font-mono font-bold shrink-0'>{formatCurrency(getOrderTotal(order.id))}</span>
                 </div>
 
                 <div className='flex items-center'>
@@ -103,13 +103,13 @@ export function Component() {
                 to={`/vendas/${order.id}/editar`}
                 className={Card.getStyle('p-3 flex flex-row justify-between items-center opacity-70')}
               >
-                <div>
-                  <p className='text-sm font-semibold'>{order.name}</p>
-                  <p className='text-xs text-base-content/60'>
+                <div className='min-w-0'>
+                  <p className='text-sm font-semibold truncate'>{order.name}</p>
+                  <p className='text-xs text-base-content/60 truncate'>
                     Fechada {new Date(order.closedAt).toLocaleString('pt-BR')}
                   </p>
                 </div>
-                <span className='font-mono text-sm'>{formatCurrency(order.total)}</span>
+                <span className='font-mono text-sm shrink-0'>{formatCurrency(order.total)}</span>
               </Link>
             ))}
           </div>
