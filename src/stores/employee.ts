@@ -10,11 +10,14 @@ export const employeeStore = createStore({
     get: (id: string) => get().employees.find((p) => p.id === id),
     add: (data: Create): Employee => {
       const entry = { ...data, id: generateUUID() }
-      set({ employees: [entry, ...get().employees] }); return entry
+      set({ employees: [entry, ...get().employees] })
+      return entry
     },
     update: (id: string, data: Partial<Create>) => {
-      set({ employees: get().employees.map((p) => p.id === id ? { ...p, ...data, id } : p) })
+      set({ employees: get().employees.map((p) => (p.id === id ? { ...p, ...data, id } : p)) })
     },
-    delete: (id: string) => { set({ employees: get().employees.filter((p) => p.id !== id) }) },
+    delete: (id: string) => {
+      set({ employees: get().employees.filter((p) => p.id !== id) })
+    },
   }),
 })

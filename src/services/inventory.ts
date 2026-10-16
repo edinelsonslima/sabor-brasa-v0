@@ -7,29 +7,45 @@ export function weightedAverage(stock: number, avg: number, qty: number, unitCos
 }
 export function canReserve(productId: string, qty: number): Result {
   const product = productStore.action.get(productId)
-  if (!product) { return { ok: false, reason: 'Produto não encontrado' } }
-  if (invalid(qty)) { return { ok: false, reason: 'Quantidade inválida' } }
-  if ((product.stock ?? 0) < qty) { return { ok: false, reason: `Estoque insuficiente: ${product.name}` } }
+  if (!product) {
+    return { ok: false, reason: 'Produto não encontrado' }
+  }
+  if (invalid(qty)) {
+    return { ok: false, reason: 'Quantidade inválida' }
+  }
+  if ((product.stock ?? 0) < qty) {
+    return { ok: false, reason: `Estoque insuficiente: ${product.name}` }
+  }
   return { ok: true }
 }
 export function reserve(productId: string, qty: number): Result {
   const result = canReserve(productId, qty)
-  if (!result.ok) { return result }
+  if (!result.ok) {
+    return result
+  }
   const product = productStore.action.get(productId)
-  if (!product) { return { ok: false, reason: 'Produto não encontrado' } }
+  if (!product) {
+    return { ok: false, reason: 'Produto não encontrado' }
+  }
   productStore.action.setStock(productId, (product.stock ?? 0) - qty)
   return { ok: true }
 }
 export function release(productId: string, qty: number): Result {
   const product = productStore.action.get(productId)
-  if (!product) { return { ok: true } }
-  if (invalid(qty)) { return { ok: false, reason: 'Quantidade inválida' } }
+  if (!product) {
+    return { ok: true }
+  }
+  if (invalid(qty)) {
+    return { ok: false, reason: 'Quantidade inválida' }
+  }
   productStore.action.setStock(productId, (product.stock ?? 0) + qty)
   return { ok: true }
 }
 export function receive(productId: string, qty: number, unitCost: number): Result {
   const product = productStore.action.get(productId)
-  if (!product) { return { ok: false, reason: 'Produto não encontrado' } }
+  if (!product) {
+    return { ok: false, reason: 'Produto não encontrado' }
+  }
   if (invalid(qty) || qty === 0 || !Number.isFinite(unitCost) || unitCost < 0) {
     return { ok: false, reason: 'Compra inválida' }
   }
@@ -45,7 +61,8 @@ export function revertReceive(entry: StockEntry): Result {
   }
   const stock = product.stock ?? 0
   const remaining = stock - entry.quantity
-  const avg = remaining > 0 ? (stock * product.averageCost - entry.quantity * entry.unitCost) / remaining : product.averageCost
+  const avg =
+    remaining > 0 ? (stock * product.averageCost - entry.quantity * entry.unitCost) / remaining : product.averageCost
   productStore.action.setStock(product.id, remaining, avg)
   return { ok: true }
 }

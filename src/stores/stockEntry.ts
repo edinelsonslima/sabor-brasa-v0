@@ -7,8 +7,12 @@ export const stockEntryStore = createStore({
   createActions: (set, get) => ({
     get: (id: string) => get().find((e) => e.id === id),
     add: (data: Omit<StockEntry, 'id'>) => {
-      const entry = { ...data, id: generateUUID() }; set([entry, ...get()]); return entry
+      const entry = { ...data, id: generateUUID() }
+      set([entry, ...get()])
+      return entry
     },
-    delete: (id: string) => { set(get().filter((e) => e.id !== id)) },
+    delete: (id: string) => {
+      set(get().filter((e) => e.id !== id))
+    },
   }),
 })

@@ -1,3 +1,6 @@
+import { addStockEntry } from '@/services/purchases'
+import { weightedAverage } from '@/services/inventory'
+import { addProduct, updateProduct, deleteProduct } from '@/services/records'
 import { Title } from '@/components/_layout/title'
 import { Button } from '@/components/_ui/button'
 import { Card } from '@/components/_ui/card'
@@ -5,12 +8,11 @@ import { Label } from '@/components/_ui/label'
 import { Modal } from '@/components/_ui/modal'
 import { toast } from '@/components/_ui/toast'
 import { CurrencyInput } from '@/components/currency/Input'
-import { productStore } from '@/hooks/useProducts'
-import { stockEntryStore } from '@/hooks/useStockEntries'
+import { productStore } from '@/stores/product'
 import { cn, formatCurrency, vibrate } from '@/lib/utils'
 import type { Product, ProductCategory } from '@/types'
 import { m } from 'framer-motion'
-import { PackagePlus, Package, Pencil, Plus, Trash2 } from 'lucide-react'
+import { PackagePlus, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 const CATEGORY_LABEL: Record<ProductCategory, string> = {
@@ -55,7 +57,7 @@ function ProductEditModal({ product }: { product: Product }) {
       return false
     }
 
-    productStore.action.update(product.id, {
+    updateProduct(product.id, {
       name: name.trim(),
       category,
       unit,
@@ -154,10 +156,9 @@ function StockEntryModal({ product }: { product: Product }) {
   const [totalCost, setTotalCost] = useState(0)
   const unitLabel = product.unit === 'litro' ? 'L' : 'un'
   const unitCost = quantity > 0 ? totalCost / quantity : 0
-  const stock = Math.max(0, product.stock ?? 0)
+  const stock = product.stock ?? 0
   const avg = product.averageCost ?? 0
-  const newAvg =
-    quantity > 0 ? (stock === 0 ? unitCost : (stock * avg + quantity * unitCost) / (stock + quantity)) : avg
+  const newAvg = quantity > 0 ? weightedAverage(stock, avg, quantity, unitCost) : avg
 
   const reset = () => {
     setQuantity(0)
@@ -173,7 +174,11 @@ function StockEntryModal({ product }: { product: Product }) {
       toast.error('Informe quanto pagou na compra')
       return false
     }
-    stockEntryStore.action.add(product.id, quantity, unitCost)
+    const result = addStockEntry(product.id, quantity, { totalPaid: totalCost })
+    if (!result.ok) {
+      toast.error(result.reason)
+      return false
+    }
     toast.success('Estoque lançado e gasto registrado!')
     return true
   }
@@ -287,9 +292,9 @@ export function Component() {
       return
     }
 
-    const created = productStore.action.add({ name: name.trim(), unit, category, price, stock: 0 })
+    const created = addProduct({ name: name.trim(), unit, category, price, stock: 0 })
     if (stock > 0) {
-      stockEntryStore.action.add(created.id, stock, stockCost / stock)
+      addStockEntry(created.id, stock, { totalPaid: stockCost })
     }
     toast.success('Produto adicionado!')
     setName('')
@@ -416,7 +421,7 @@ export function Component() {
                   variant='error'
                   appearance='soft'
                   onConfirm={() => {
-                    productStore.action.delete(p.id)
+                    deleteProduct(p.id)
                     toast.info('Produto removido')
                   }}
                 >

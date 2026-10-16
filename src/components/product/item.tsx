@@ -3,7 +3,6 @@ import type { Product } from '@/types'
 import { MinusIcon, PackageIcon, PlusIcon } from 'lucide-react'
 import type { ComponentProps } from 'react'
 import { Button } from '../_ui/button'
-import { productStore } from '@/hooks/useProducts'
 
 interface Props extends Omit<ComponentProps<'div'>, 'onSelect'> {
   product: Product
@@ -20,7 +19,6 @@ export function ProductItem({ product, quantity = 0, className, onSelect, ...pro
 
   const handleAddProduct = () => {
     handleChangeProductQuantity(quantity + 1)
-    productStore.action.changeStock(product.id, -1)
   }
 
   const handleRemoveProduct = () => {
@@ -29,7 +27,6 @@ export function ProductItem({ product, quantity = 0, className, onSelect, ...pro
     }
 
     handleChangeProductQuantity(quantity - 1)
-    productStore.action.changeStock(product.id, 1)
   }
 
   return (

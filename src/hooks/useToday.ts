@@ -15,8 +15,11 @@ export function useToday() {
     refresh()
     window.addEventListener('focus', refresh)
     document.addEventListener('visibilitychange', refresh)
-    return () => { clearTimeout(timer); window.removeEventListener('focus', refresh)
-      document.removeEventListener('visibilitychange', refresh) }
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('focus', refresh)
+      document.removeEventListener('visibilitychange', refresh)
+    }
   }, [])
   return day
 }

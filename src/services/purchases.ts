@@ -15,19 +15,34 @@ export function addStockEntry(productId: string, qty: number, cost: Cost): Resul
   }
   const date = Date.now()
   const totalCost = qty * unitCost
-  const expense = expenseStore.action.add({ description: `Compra de estoque: ${qty}x ${product.name}`,
-    category: 'bebidas_comida', amount: totalCost, date: localDateKey(date) })
+  const expense = expenseStore.action.add({
+    description: `Compra de estoque: ${qty}x ${product.name}`,
+    category: 'bebidas_comida',
+    amount: totalCost,
+    date: localDateKey(date),
+  })
   receive(productId, qty, unitCost)
-  const entry = stockEntryStore.action.add({ productId, quantity: qty, unitCost, totalCost, date, expenseId: expense.id })
+  const entry = stockEntryStore.action.add({
+    productId,
+    quantity: qty,
+    unitCost,
+    totalCost,
+    date,
+    expenseId: expense.id,
+  })
   logAudit('expense_created', `Gasto: ${expense.description} - ${totalCost}`)
   logAudit('stock_entry_created', `Estoque lançado: ${qty}x ${product.name} - Total: ${totalCost}`)
   return { ok: true, entry }
 }
 export function deleteStockEntry(id: string): Result {
   const entry = stockEntryStore.action.get(id)
-  if (!entry) { return { ok: false, reason: 'Compra não encontrada' } }
+  if (!entry) {
+    return { ok: false, reason: 'Compra não encontrada' }
+  }
   const result = revertReceive(entry)
-  if (!result.ok) { return result }
+  if (!result.ok) {
+    return result
+  }
   if (entry.expenseId) {
     expenseStore.action.delete(entry.expenseId)
     logAudit('expense_deleted', `Gasto excluído: ${entry.expenseId}`)

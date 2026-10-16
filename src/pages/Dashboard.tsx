@@ -1,35 +1,58 @@
+import { formatDate } from '@/lib/date'
+import { useMemo } from 'react'
+import { useToday } from '@/hooks/useToday'
+import { salesInRange, salesTotals, staffPaymentsTotal, expensesTotal, margin, netCash } from '@/selectors/finance'
+import { removeSale } from '@/services/sales'
 import { Title } from '@/components/_layout/title'
 import { Card } from '@/components/_ui/card'
 import { toast } from '@/components/_ui/toast'
 import { Stat } from '@/components/dashboard/stat'
 import { SaleItem } from '@/components/sales/item'
-import { authStore } from '@/hooks/useAuth'
-import { expenseStore, sumExpenses } from '@/hooks/useExpenses'
-import { paymentStore } from '@/hooks/usePayments'
-import { saleStore } from '@/hooks/useSales'
-import { salesMargin } from '@/lib/sales'
+import { authStore } from '@/stores/auth'
+import { expenseStore } from '@/stores/expense'
+import { staffPaymentStore } from '@/stores/staffPayment'
+import { saleStore } from '@/stores/sale'
 import { cn, formatCurrency } from '@/lib/utils'
 import { Banknote, PiggyBank, DollarSign, Wallet, Minus, Smartphone, TrendingDown, TrendingUp } from 'lucide-react'
 
 export function Component() {
   const user = authStore.useStore((state) => state.user)
 
-  const todaySales = saleStore.useStore((state) => state.today)
-  const monthSales = saleStore.useStore((state) => state.month)
-
-  const todayPayments = paymentStore.useStore((state) => state.today)
-  const monthPayments = paymentStore.useStore((state) => state.month)
-
-  const expenses = expenseStore.useStore((state) => state.expenses)
-  const todayExpenses = sumExpenses(expenses, 'today')
-  const monthExpenses = sumExpenses(expenses, 'month')
-
   const allSales = saleStore.useStore((state) => state.sales)
-  const todayMargin = salesMargin(allSales.filter((s) => todaySales.saleId.includes(s.id)))
-  const monthMargin = salesMargin(allSales.filter((s) => monthSales.saleId.includes(s.id)))
-
-  const todayNet = todaySales.total - todayPayments.total - todayExpenses
-  const monthNet = monthSales.total - monthPayments.total - monthExpenses
+  const payments = staffPaymentStore.useStore((state) => state.payments)
+  const expenses = expenseStore.useStore((state) => state.expenses)
+  const day = useToday()
+  const month = day.slice(0, 7)
+  const stats = useMemo(() => {
+    const dayRange = { day }
+    const monthRange = { month }
+    const daily = salesInRange(allSales, dayRange)
+    const monthly = salesInRange(allSales, monthRange)
+    return {
+      todaySales: salesTotals(daily),
+      monthSales: salesTotals(monthly),
+      todayPayments: { total: staffPaymentsTotal(payments, dayRange) },
+      monthPayments: { total: staffPaymentsTotal(payments, monthRange) },
+      todayExpenses: expensesTotal(expenses, dayRange),
+      monthExpenses: expensesTotal(expenses, monthRange),
+      todayMargin: margin(daily),
+      monthMargin: margin(monthly),
+      todayNet: netCash(allSales, payments, expenses, dayRange),
+      monthNet: netCash(allSales, payments, expenses, monthRange),
+    }
+  }, [allSales, payments, expenses, day, month])
+  const {
+    todaySales,
+    monthSales,
+    todayPayments,
+    monthPayments,
+    todayExpenses,
+    monthExpenses,
+    todayMargin,
+    monthMargin,
+    todayNet,
+    monthNet,
+  } = stats
 
   const getGreeting = () => {
     const hour = new Date().getHours()
@@ -46,7 +69,7 @@ export function Component() {
   }
 
   const handleDelete = (id: string) => {
-    saleStore.action.delete(id)
+    removeSale(id)
     toast.success('Venda excluída')
   }
 
@@ -54,7 +77,7 @@ export function Component() {
     <>
       <Title
         title={`${getGreeting()}, ${user?.name?.split(' ')[0] ?? ''}!`}
-        subtitle={`Resumo do dia ${new Date().toLocaleDateString('pt-BR')}`}
+        subtitle={`Resumo do dia ${formatDate(Date.now())}`}
       />
 
       <Card appearance='ghost'>

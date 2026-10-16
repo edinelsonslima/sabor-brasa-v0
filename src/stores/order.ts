@@ -8,15 +8,20 @@ export const orderStore = createStore({
     get: (id: string) => get().find((o) => o.id === id),
     create: (name: string, products: OrderItem[] = []) => {
       const order: Order = { id: generateUUID(), name, products, openedAt: Date.now() }
-      set([...get(), order]); return order
+      set([...get(), order])
+      return order
     },
     update: (id: string, data: Partial<Pick<Order, 'name' | 'products'>>) => {
-      set(get().map((o) => o.id === id ? { ...o, ...data } : o))
+      set(get().map((o) => (o.id === id ? { ...o, ...data } : o)))
     },
-    delete: (id: string) => { set(get().filter((o) => o.id !== id)) },
+    delete: (id: string) => {
+      set(get().filter((o) => o.id !== id))
+    },
     setProducts: (id: string, products: OrderItem[]) => {
-      set(get().map((o) => o.id === id ? { ...o, products } : o))
+      set(get().map((o) => (o.id === id ? { ...o, products } : o)))
     },
-    replaceAll: (orders: Order[]) => { set(orders) },
+    replaceAll: (orders: Order[]) => {
+      set(orders)
+    },
   }),
 })

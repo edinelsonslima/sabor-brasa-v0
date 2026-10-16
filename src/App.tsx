@@ -1,5 +1,5 @@
 import { Toaster } from '@/components/_ui/toast'
-import { authStore } from '@/hooks/useAuth'
+import { authStore } from '@/stores/auth'
 import { domMax, LazyMotion } from 'framer-motion'
 import { createBrowserRouter, createRoutesFromElements, Navigate, Route, RouterProvider } from 'react-router-dom'
 import AppLayout from './components/_layout'
@@ -36,7 +36,11 @@ function AuthGate() {
             <Route path=':id' lazy={() => import('@/pages/Order')} hydrateFallbackElement={<Loading />} />
             <Route path=':id/itens' lazy={() => import('@/pages/OrderDetail')} hydrateFallbackElement={<Loading />} />
           </Route>
-          <Route path='/vendas/:id/editar' lazy={() => import('@/pages/OrderEdit')} hydrateFallbackElement={<Loading />} />
+          <Route
+            path='/vendas/:id/editar'
+            lazy={() => import('@/pages/OrderEdit')}
+            hydrateFallbackElement={<Loading />}
+          />
         </Route>
       </Route>
 

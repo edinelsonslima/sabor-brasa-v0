@@ -1,3 +1,6 @@
+import { formatDateTime } from '@/lib/date'
+import { editSale, removeSale } from '@/services/sales'
+import { reopen } from '@/services/comandas'
 import { Title } from '@/components/_layout/title'
 import { Button } from '@/components/_ui/button'
 import { Card } from '@/components/_ui/card'
@@ -5,11 +8,9 @@ import { Label } from '@/components/_ui/label'
 import { toast } from '@/components/_ui/toast'
 import { CurrencyInput } from '@/components/currency/Input'
 import { CurrencyMonitor } from '@/components/currency/monitor'
-import { orderStore } from '@/hooks/useOrders'
-import { productStore } from '@/hooks/useProducts'
 import { cn, formatCurrency, vibrate } from '@/lib/utils'
-import { saleStore } from '@/hooks/useSales'
-import { itemsTotal, splitPayment } from '@/lib/sales'
+import { saleStore } from '@/stores/sale'
+import { itemsTotal } from '@/lib/sales'
 import type { PaymentMethod, SaleItem } from '@/types'
 import { Banknote, Minus, Plus, Save, Smartphone, Trash2, UndoDotIcon } from 'lucide-react'
 import { useState } from 'react'
@@ -35,7 +36,9 @@ export function Component() {
   }
 
   const handleSave = () => {
-    if (!order) return
+    if (!order) {
+      return
+    }
     const kept = items.filter((i) => i.quantity > 0)
 
     if (!kept.length) {
@@ -48,35 +51,38 @@ export function Component() {
       return
     }
 
-    saleStore.action.update(order.id, {
-      items: kept,
-      paymentMethod,
-      total,
-      ...splitPayment(paymentMethod, total, cashAmount, pixAmount),
-    })
+    const result = editSale(order.id, kept, { paymentMethod, cash: cashAmount, pix: pixAmount })
+    if (!result.ok) {
+      toast.error(result.reason)
+      return
+    }
 
     toast.success('Venda atualizada!')
     navigate(-1)
   }
 
   const handleDelete = () => {
-    if (!order) return
-    saleStore.action.delete(order.id)
+    if (!order) {
+      return
+    }
+    removeSale(order.id)
     toast.success('Venda excluída')
     navigate(-1)
   }
 
   const handleReopen = () => {
-    if (!order) return
-    const products = order.items
-      .filter((i): i is SaleItem & { productId: string } => !!i.productId && !!productStore.action.get(i.productId))
-      .map((i) => ({ productId: i.productId, quantity: i.quantity }))
-
-    saleStore.action.delete(order.id)
-    const reopened = orderStore.action.create(order.name, products)
-
+    if (!order) {
+      return
+    }
+    const result = reopen(order.id)
+    if (!result.ok || !result.order) {
+      if (!result.ok) {
+        toast.error(result.reason)
+      }
+      return
+    }
     toast.success('Comanda reaberta!')
-    navigate(`/comandas/${reopened.id}`)
+    navigate(`/comandas/${result.order.id}`)
   }
 
   if (!order) {
@@ -92,7 +98,7 @@ export function Component() {
 
   return (
     <>
-      <Title title={`Editar Venda: ${order.name}`} subtitle={new Date(order.closedAt).toLocaleString('pt-BR')} />
+      <Title title={`Editar Venda: ${order.name}`} subtitle={formatDateTime(order.closedAt)} />
 
       <Card>
         <p className='text-xs text-base-content/60 uppercase tracking-wide font-semibold'>Total</p>
@@ -110,9 +116,7 @@ export function Component() {
           >
             <div className='flex-1 min-w-0'>
               <p className='text-sm font-semibold truncate'>{product.name}</p>
-              <p className='text-xs text-base-content/60 font-mono'>
-                {formatCurrency(product.unitPrice)}
-              </p>
+              <p className='text-xs text-base-content/60 font-mono'>{formatCurrency(product.unitPrice)}</p>
             </div>
 
             <div className='flex items-center gap-1'>

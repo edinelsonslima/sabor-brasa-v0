@@ -1,10 +1,12 @@
+import { formatDateTime, formatTime } from '@/lib/date'
+import { createOpen } from '@/services/comandas'
+import { itemsTotal, snapshotItems } from '@/lib/sales'
 import { Title } from '@/components/_layout/title'
 import { Button } from '@/components/_ui/button'
 import { Card } from '@/components/_ui/card'
 import { toast } from '@/components/_ui/toast'
-import { orderStore } from '@/hooks/useOrders'
-import { productStore } from '@/hooks/useProducts'
-import { saleStore } from '@/hooks/useSales'
+import { orderStore } from '@/stores/order'
+import { saleStore } from '@/stores/sale'
 import { formatCurrency, vibrate } from '@/lib/utils'
 import { ChevronRight, Plus, ReceiptTextIcon } from 'lucide-react'
 import type { SubmitEvent } from 'react'
@@ -31,7 +33,7 @@ export function Component() {
 
     vibrate(10)
 
-    const order = orderStore.action.create(orderName)
+    const order = createOpen(orderName)
 
     toast.success(`Comanda "${order.name}" aberta`)
     navigate(`/comandas/${order.id}`)
@@ -40,10 +42,7 @@ export function Component() {
   const getOrderTotal = (orderId: string) => {
     const order = orderStore.action.get(orderId) ?? { products: [] }
 
-    return order.products.reduce((acc, p) => {
-      const productPrice = productStore.action.get(p.productId)?.price ?? 0
-      return acc + productPrice * p.quantity
-    }, 0)
+    return itemsTotal(snapshotItems(order.products))
   }
 
   return (
@@ -81,8 +80,7 @@ export function Component() {
 
                 <div className='flex items-center'>
                   <p className='text-xs text-base-content/60'>
-                    {order.products.length} itens · aberta às{' '}
-                    {new Date(order.openedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                    {order.products.length} itens · aberta às {formatTime(order.openedAt)}
                   </p>
                   <ChevronRight size={18} className='opacity-40' />
                 </div>
@@ -105,9 +103,7 @@ export function Component() {
               >
                 <div className='min-w-0'>
                   <p className='text-sm font-semibold truncate'>{order.name}</p>
-                  <p className='text-xs text-base-content/60 truncate'>
-                    Fechada {new Date(order.closedAt).toLocaleString('pt-BR')}
-                  </p>
+                  <p className='text-xs text-base-content/60 truncate'>Fechada {formatDateTime(order.closedAt)}</p>
                 </div>
                 <span className='font-mono text-sm shrink-0'>{formatCurrency(order.total)}</span>
               </Link>

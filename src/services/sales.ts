@@ -17,15 +17,21 @@ function quantities(items: SaleItem[]) {
 }
 export function removeSale(id: string): Result {
   const sale = saleStore.action.get(id)
-  if (!sale) { return { ok: false, reason: 'Venda não encontrada' } }
-  for (const [productId, qty] of quantities(sale.items)) { release(productId, qty) }
+  if (!sale) {
+    return { ok: false, reason: 'Venda não encontrada' }
+  }
+  for (const [productId, qty] of quantities(sale.items)) {
+    release(productId, qty)
+  }
   saleStore.action.delete(id)
   logAudit('sale_deleted', `Venda excluída: ${sale.name} - Total: ${sale.total}`)
   return { ok: true }
 }
 export function editSale(id: string, items: SaleItem[], payment: SalePayment): Result {
   const sale = saleStore.action.get(id)
-  if (!sale) { return { ok: false, reason: 'Venda não encontrada' } }
+  if (!sale) {
+    return { ok: false, reason: 'Venda não encontrada' }
+  }
   if (!items.length || items.some((i) => !Number.isFinite(i.quantity) || i.quantity <= 0)) {
     return { ok: false, reason: 'Quantidade inválida' }
   }
@@ -36,17 +42,25 @@ export function editSale(id: string, items: SaleItem[], payment: SalePayment): R
   }
   const before = quantities(sale.items)
   const after = quantities(items)
-  const deltas = [...new Set([...before.keys(), ...after.keys()])].map((productId) => ({ productId,
-    qty: (after.get(productId) ?? 0) - (before.get(productId) ?? 0) }))
+  const deltas = [...new Set([...before.keys(), ...after.keys()])].map((productId) => ({
+    productId,
+    qty: (after.get(productId) ?? 0) - (before.get(productId) ?? 0),
+  }))
   // Preflight every positive delta before mutating anything: failed edits are atomic.
   for (const { productId, qty } of deltas) {
     if (qty > 0) {
       const result = canReserve(productId, qty)
-      if (!result.ok) { return result }
+      if (!result.ok) {
+        return result
+      }
     }
   }
   for (const { productId, qty } of deltas) {
-    if (qty > 0) { reserve(productId, qty) } else if (qty < 0) { release(productId, -qty) }
+    if (qty > 0) {
+      reserve(productId, qty)
+    } else if (qty < 0) {
+      release(productId, -qty)
+    }
   }
   saleStore.action.update(id, { items, total, paymentMethod: payment.paymentMethod, ...split })
   logAudit('sale_updated', `Venda editada: ${sale.name}`)
