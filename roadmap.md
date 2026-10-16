@@ -1,5 +1,12 @@
 # Roadmap
 
+## Phase 1: store refactor
+- [ ] Versioned persisted CRUD stores and compatible data migration
+- [ ] Inventory, comanda, sale, purchase and audit/auth services
+- [ ] Shared local date library and pure finance selectors; update consumers without redesign
+- [ ] Regression tests, lint cleanup and end-to-end verification
+- [ ] Phase 2 bugfixes: blocked until user supplies phase 2
+
 ## Correções pendentes
 - [ ] `vibrate` defensivo (`window?.navigator?.vibrate?.(pattern)`) em `src/lib/utils.ts`
 - [ ] Input do nome da comanda (`Orders.tsx`) maior/padrão visual

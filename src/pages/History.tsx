@@ -1,18 +1,29 @@
+import { formatDate } from '@/lib/date'
+import { expenseStore } from '@/stores/expense'
+import {
+  salesInRange,
+  staffPaymentsInRange,
+  salesTotals,
+  staffPaymentsTotal,
+  margin,
+  netCash,
+} from '@/selectors/finance'
+import { localDateKey, isSameDay } from '@/lib/date'
+import { removeSale } from '@/services/sales'
 import { Title } from '@/components/_layout/title'
 import { Card } from '@/components/_ui/card'
 import { Calendar } from '@/components/calendar'
 import { Stat } from '@/components/dashboard/stat'
 import { SalesChart } from '@/components/history/chart'
 import { SaleItem } from '@/components/sales/item'
-import { employeeStore } from '@/hooks/useEmployees'
-import { paymentStore } from '@/hooks/usePayments'
-import { saleStore } from '@/hooks/useSales'
+import { employeeStore } from '@/stores/employee'
+import { staffPaymentStore } from '@/stores/staffPayment'
+import { saleStore } from '@/stores/sale'
 import { toast } from '@/lib/toast'
-import { salesMargin } from '@/lib/sales'
-import { cn, formatCurrency, localDateKey } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import { Banknote, PiggyBank, DollarSign, Minus, Smartphone, TrendingDown, TrendingUp } from 'lucide-react'
 import type { ComponentProps } from 'react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 type HighDateProps = Parameters<NonNullable<ComponentProps<typeof Calendar>['highlight']>>[0]
 
@@ -20,17 +31,18 @@ type SelectDateProps = Parameters<NonNullable<ComponentProps<typeof Calendar>['o
 
 export function Component() {
   const sales = saleStore.useStore((s) => s.sales)
-  const payments = paymentStore.useStore((s) => s.payments)
+  const payments = staffPaymentStore.useStore((s) => s.payments)
 
   const [date, setDate] = useState(localDateKey())
 
-  const daySales = sales.filter((s) => localDateKey(s.closedAt) === date)
-  const dayPayments = payments.filter((p) => p.date.startsWith(date))
-
-  const totalSales = daySales.reduce((a, s) => a + (s.total), 0)
-  const totalPix = daySales.reduce((a, s) => a + (s.pix), 0)
-  const totalCash = daySales.reduce((a, s) => a + (s.cash), 0)
-  const totalPayments = dayPayments.reduce((a, p) => a + (p.amount ?? 0), 0)
+  const expenses = expenseStore.useStore((s) => s.expenses)
+  const daySales = useMemo(() => salesInRange(sales, { day: date }), [sales, date])
+  const dayPayments = useMemo(() => staffPaymentsInRange(payments, { day: date }), [payments, date])
+  const totals = useMemo(() => salesTotals(daySales), [daySales])
+  const totalSales = totals.total
+  const totalPix = totals.pix
+  const totalCash = totals.cash
+  const totalPayments = useMemo(() => staffPaymentsTotal(payments, { day: date }), [payments, date])
   const totalPaymentsByEmployee = dayPayments.reduce<{ id: string; name: string; amount: number; count: number }[]>(
     (acc, payment) => {
       if (payment.receiver?.type !== 'employee' || !payment.receiver.id) {
@@ -63,8 +75,8 @@ export function Component() {
     },
     [],
   )
-  const net = totalSales - totalPayments
-  const margin = salesMargin(daySales)
+  const net = useMemo(() => netCash(sales, payments, expenses, { day: date }), [sales, payments, expenses, date])
+  const dayMargin = useMemo(() => margin(daySales), [daySales])
 
   const currentDateSelected = {
     day: parseInt(date.split('-')[2], 10),
@@ -73,21 +85,15 @@ export function Component() {
   }
 
   const handleSelectDate = ({ day, month, year }: SelectDateProps) => {
-    const m = (month + 1).toString().padStart(2, '0')
-    const d = day.toString().padStart(2, '0')
-    const date = `${year}-${m}-${d}`
-    setDate(date)
+    setDate(localDateKey(new Date(year, month, day)))
   }
 
   const hasSalesOnDay = ({ day, month, year, selected }: HighDateProps) => {
-    const m = (month + 1).toString().padStart(2, '0')
-    const d = day.toString().padStart(2, '0')
-    const dateStr = `${year}-${m}-${d}`
-    return sales.some((s) => localDateKey(s.closedAt) === dateStr) && !selected
+    return sales.some((s) => isSameDay(s.closedAt, new Date(year, month, day))) && !selected
   }
 
   const handleDelete = (id: string) => {
-    saleStore.action.delete(id)
+    removeSale(id)
     toast.success('Venda excluída')
   }
 
@@ -98,7 +104,7 @@ export function Component() {
       <Calendar onSelect={handleSelectDate} highlight={hasSalesOnDay} />
 
       <Card.Title className='text-sm text-base-content/50 font-semibold capitalize mb-0.5 py-2 sticky top-15 z-10 bg-base-100'>
-        {new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', {
+        {formatDate(date, {
           weekday: 'long',
           day: 'numeric',
           month: 'long',
@@ -119,7 +125,7 @@ export function Component() {
 
       <Stat
         title='Líquido do Dia'
-        subtitle='Total vendido − diárias pagas'
+        subtitle='Total vendido − diárias pagas − gastos'
         value={net}
         icon={{
           element: net >= 0 ? TrendingUp : TrendingDown,
@@ -134,7 +140,7 @@ export function Component() {
       <Stat
         title='Margem estimada do dia'
         subtitle='Preço − custo médio dos itens vendidos. Diferente do lucro de caixa: não conta gastos nem diárias.'
-        value={margin}
+        value={dayMargin}
         icon={{ element: PiggyBank, variant: 'info' }}
         variant='info'
       />

@@ -1,6 +1,6 @@
-import { productStore } from '@/hooks/useProducts'
-import { orderStore } from '@/hooks/useOrders'
-import { saleStore } from '@/hooks/useSales'
+import { productStore } from '@/stores/product'
+import { orderStore } from '@/stores/order'
+import { saleStore } from '@/stores/sale'
 import type { PaymentMethod, Sale, SaleItem } from '@/types'
 import { snapshotItems } from './sales'
 
@@ -47,7 +47,9 @@ function migrateLegacySales() {
   }
 
   saleStore.action.replaceAll(
-    sales.map((s) => (Array.isArray((s as Sale).items) ? (s as Sale) : convertLegacySale(s as LegacySale, productStore.action.get))),
+    sales.map((s) =>
+      Array.isArray((s as Sale).items) ? (s as Sale) : convertLegacySale(s as LegacySale, productStore.action.get),
+    ),
   )
 }
 
@@ -74,7 +76,10 @@ function migrateClosedOrders() {
   }
 }
 
-export function convertLegacySale(s: LegacySale, productName: (id: string) => { name: string; price: number } | undefined,): Sale {
+export function convertLegacySale(
+  s: LegacySale,
+  productName: (id: string) => { name: string; price: number } | undefined,
+): Sale {
   const items: SaleItem[] = [
     ...(s.products?.regular ?? []).map((p) => {
       const product = productName(p.id)
@@ -86,7 +91,13 @@ export function convertLegacySale(s: LegacySale, productName: (id: string) => { 
         quantity: p.quantity,
       }
     }),
-    ...(s.products?.custom ?? []).map((p) => ({ productId: null, name: p.name, unitPrice: p.price, unitCost: 0, quantity: p.quantity })),
+    ...(s.products?.custom ?? []).map((p) => ({
+      productId: null,
+      name: p.name,
+      unitPrice: p.price,
+      unitCost: 0,
+      quantity: p.quantity,
+    })),
   ]
   const total = s.price?.total ?? 0
   const method = s.paymentMethod ?? 'dinheiro'

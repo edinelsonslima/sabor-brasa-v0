@@ -2,7 +2,7 @@ import { Button } from '@/components/_ui/button'
 import { Label } from '@/components/_ui/label'
 import { toast } from '@/components/_ui/toast'
 import logo from '@/assets/sabor-brasa-logo.png'
-import { authStore } from '@/hooks/useAuth'
+import { login, register } from '@/services/auth'
 import { m } from 'framer-motion'
 import type { FormEvent } from 'react'
 import { useState } from 'react'
@@ -31,7 +31,7 @@ export function Component() {
         return toast.error('Senha deve ter ao menos 4 caracteres')
       }
 
-      const err = authStore.action.register(name.trim(), email.trim().toLowerCase(), password)
+      const err = register(name.trim(), email.trim().toLowerCase(), password)
 
       return err ? toast.error(err) : toast.success('Conta criada com sucesso!')
     }
@@ -44,7 +44,7 @@ export function Component() {
       return toast.error('Informe um e-mail válido')
     }
 
-    const err = authStore.action.login(email.trim().toLowerCase(), password)
+    const err = login(email.trim().toLowerCase(), password)
 
     return err ? toast.error(err) : toast.success('Bem-vindo de volta!')
   }

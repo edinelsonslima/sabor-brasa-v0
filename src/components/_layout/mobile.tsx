@@ -1,5 +1,5 @@
-import type { AppUser } from '@/hooks/useAuth'
-import { authStore } from '@/hooks/useAuth'
+import type { AppUser } from '@/stores/auth'
+import { logout } from '@/services/auth'
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation'
 import type { Theme } from '@/hooks/useTheme'
 import { themeStore } from '@/hooks/useTheme'
@@ -163,13 +163,7 @@ export function Mobile({ user, theme }: PropsWithChildren<MobileProps>) {
               </li>
 
               <li className='border-t border-black/15 pt-1 mt-1'>
-                <Button
-                  size='sm'
-                  variant='error'
-                  appearance='link'
-                  className='justify-start'
-                  onClick={() => authStore.action.logout()}
-                >
+                <Button size='sm' variant='error' appearance='link' className='justify-start' onClick={() => logout()}>
                   <LogOut size={14} /> Sair
                 </Button>
               </li>

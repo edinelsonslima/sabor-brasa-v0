@@ -1,3 +1,5 @@
+import { formatTime } from '@/lib/date'
+import { close, deleteOpen } from '@/services/comandas'
 import { Title } from '@/components/_layout/title'
 import { Button } from '@/components/_ui/button'
 import { Card } from '@/components/_ui/card'
@@ -6,10 +8,8 @@ import { toast } from '@/components/_ui/toast'
 import { Calculator } from '@/components/calculator'
 import { CurrencyInput } from '@/components/currency/Input'
 import { SaleCelebration } from '@/components/sales/celebration'
-import { orderStore } from '@/hooks/useOrders'
-import { productStore } from '@/hooks/useProducts'
-import { saleStore } from '@/hooks/useSales'
-import { itemsTotal, snapshotItems, splitPayment } from '@/lib/sales'
+import { orderStore } from '@/stores/order'
+import { itemsTotal, snapshotItems } from '@/lib/sales'
 import { cn, formatCurrency } from '@/lib/utils'
 import type { PaymentMethod } from '@/types'
 import { AnimatePresence, m } from 'framer-motion'
@@ -34,13 +34,13 @@ export function Component() {
   const isOpen = !!order
   const totalPaymentCombined = cashAmount + pixAmount
 
-  const orderProducts = order?.products.map((prd) => {
-    const product = productStore.action.get(prd.productId)
-    return product ? { ...product, quantity: prd.quantity } : null
-  })
-
-  const products = orderProducts?.filter((p): p is NonNullable<typeof p> => !!p) ?? []
-  const total = products.reduce((acc, p) => acc + p.price * p.quantity, 0)
+  const products = snapshotItems(order?.products ?? []).map((item, index) => ({
+    ...item,
+    id: `${item.productId ?? item.name}-${index}`,
+    price: item.unitPrice,
+    unit: 'unidade',
+  }))
+  const total = itemsTotal(products)
 
   const handleDelete = () => {
     if (!order?.id) {
@@ -48,7 +48,7 @@ export function Component() {
       return
     }
 
-    orderStore.action.delete(order.id)
+    deleteOpen(order.id)
     toast.success('Comanda excluída')
     navigate('/comandas')
   }
@@ -78,20 +78,11 @@ export function Component() {
       return
     }
 
-    const items = snapshotItems(order.products)
-    const { cash, pix } = splitPayment(paymentMethod, total, cashAmount, pixAmount)
-
-    saleStore.action.add({
-      orderId: order.id,
-      name: order.name,
-      items,
-      paymentMethod,
-      total: itemsTotal(items),
-      cash,
-      pix,
-      closedAt: new Date().getTime(),
-    })
-    orderStore.action.delete(order.id, { silent: true })
+    const result = close(order.id, { paymentMethod, cash: cashAmount, pix: pixAmount })
+    if (!result.ok) {
+      toast.error(result.reason)
+      return
+    }
 
     setCashAmount(0)
     setPixAmount(0)
@@ -117,14 +108,7 @@ export function Component() {
     <>
       <SaleCelebration ref={celebration} />
 
-      <Title
-        title={order.name}
-        subtitle={
-          isOpen
-            ? `Aberta às ${new Date(order.openedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
-            : ''
-        }
-      />
+      <Title title={order.name} subtitle={isOpen ? `Aberta às ${formatTime(order.openedAt)}` : ''} />
 
       <Card>
         <div className='flex items-center justify-between gap-3'>

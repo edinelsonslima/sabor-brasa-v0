@@ -1,5 +1,6 @@
-import { saleStore } from '@/hooks/useSales'
-import { cn, formatCurrency, localDateKey } from '@/lib/utils'
+import { localDateKey } from '@/lib/date'
+import { saleStore } from '@/stores/sale'
+import { cn, formatCurrency } from '@/lib/utils'
 import { m } from 'framer-motion'
 import { Card } from '../_ui/card'
 
@@ -16,11 +17,9 @@ export function SalesChart({ day, year, month }: Props) {
 
   const dailyTotals = Array.from({ length: daysInMonth }, (_, i) => {
     const day = i + 1
-    const mm = (month + 1).toString().padStart(2, '0')
-    const dd = day.toString().padStart(2, '0')
-    const dateStr = `${year}-${mm}-${dd}`
+    const dateStr = localDateKey(new Date(year, month, day))
 
-    return sales.filter((s) => localDateKey(s.closedAt) === dateStr).reduce((acc, s) => acc + (s.total), 0)
+    return sales.filter((s) => localDateKey(s.closedAt) === dateStr).reduce((acc, s) => acc + s.total, 0)
   })
 
   const max = Math.max(...dailyTotals, 1)

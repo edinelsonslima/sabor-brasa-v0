@@ -1,3 +1,7 @@
+import { formatDate } from '@/lib/date'
+import { useToday } from '@/hooks/useToday'
+import { expensesTotal, staffPaymentsTotal } from '@/selectors/finance'
+import { expenseCategories, addExpense, deleteExpense } from '@/services/records'
 import { Title } from '@/components/_layout/title'
 import { Button } from '@/components/_ui/button'
 import { ConfirmButton } from '@/components/_ui/button/confirm'
@@ -6,17 +10,20 @@ import { Label } from '@/components/_ui/label'
 import { toast } from '@/components/_ui/toast'
 import { CurrencyInput } from '@/components/currency/Input'
 import { Stat } from '@/components/dashboard/stat'
-import { expenseCategories, expenseStore, sumExpenses } from '@/hooks/useExpenses'
-import { paymentStore } from '@/hooks/usePayments'
+import { expenseStore } from '@/stores/expense'
+import { staffPaymentStore } from '@/stores/staffPayment'
 import { formatCurrency, vibrate } from '@/lib/utils'
 import type { ExpenseCategory } from '@/types'
 import { Minus, Plus, Trash2, Wallet } from 'lucide-react'
 import type { FormEvent } from 'react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 export function Component() {
   const expenses = expenseStore.useStore((s) => s.expenses)
-  const monthPayments = paymentStore.useStore((s) => s.month)
+  const payments = staffPaymentStore.useStore((s) => s.payments)
+  const today = useToday()
+  const month = today.slice(0, 7)
+  const monthPayments = useMemo(() => ({ total: staffPaymentsTotal(payments, { month }) }), [payments, month])
   const [category, setCategory] = useState<ExpenseCategory>('bebidas_comida')
   const [formKey, setFormKey] = useState(0)
 
@@ -25,7 +32,7 @@ export function Component() {
     const fd = new FormData(e.currentTarget)
     const amount = parseInt(fd.get('amount')?.toString().replace(/\D/g, '') || '0', 10) / 100
     const description = fd.get('description')?.toString().trim() || expenseCategories[category]
-    const date = fd.get('date')?.toString() || new Date().toISOString().split('T')[0]
+    const date = fd.get('date')?.toString() || today
 
     if (amount <= 0) {
       toast.warn('Informe um valor válido')
@@ -33,12 +40,12 @@ export function Component() {
     }
 
     vibrate(10)
-    expenseStore.action.add({ amount, description, category, date: new Date(`${date}T12:00:00`).toISOString() })
+    addExpense({ amount, description, category, date })
     toast.success('Gasto lançado')
     setFormKey((k) => k + 1)
   }
 
-  const monthExpenses = sumExpenses(expenses, 'month')
+  const monthExpenses = useMemo(() => expensesTotal(expenses, { month }), [expenses, month])
 
   return (
     <>
@@ -90,12 +97,7 @@ export function Component() {
 
         <div>
           <Label>Data</Label>
-          <input
-            name='date'
-            type='date'
-            defaultValue={new Date().toISOString().split('T')[0]}
-            className='daisy-input w-full'
-          />
+          <input name='date' type='date' defaultValue={today} className='daisy-input w-full' />
         </div>
 
         <Button type='submit' variant='primary' modifier='block'>
@@ -114,7 +116,7 @@ export function Component() {
                 <div className='flex-1 min-w-0'>
                   <p className='text-sm font-semibold truncate'>{e.description}</p>
                   <p className='text-xs text-base-content/60'>
-                    {expenseCategories[e.category]} · {new Date(e.date).toLocaleDateString('pt-BR')}
+                    {expenseCategories[e.category]} · {formatDate(e.date)}
                   </p>
                 </div>
                 <span className='font-mono text-sm text-error'>-{formatCurrency(e.amount)}</span>
@@ -122,7 +124,7 @@ export function Component() {
                   size='xs'
                   variant='error'
                   appearance='soft'
-                  onConfirm={() => (expenseStore.action.delete(e.id), toast.success('Gasto excluído'))}
+                  onConfirm={() => (deleteExpense(e.id), toast.success('Gasto excluído'))}
                 >
                   <Trash2 size={15} />
                 </ConfirmButton>

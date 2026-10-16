@@ -1,3 +1,8 @@
+import { formatDate } from '@/lib/date'
+import { useToday } from '@/hooks/useToday'
+import { isSameDay } from '@/lib/date'
+import { staffPaymentsInRange, staffPaymentsTotal } from '@/selectors/finance'
+import { addStaffPayment, deleteStaffPayment, addEmployee, deleteEmployee } from '@/services/records'
 import { Title } from '@/components/_layout/title'
 import { Button } from '@/components/_ui/button'
 import { Card } from '@/components/_ui/card'
@@ -5,18 +10,22 @@ import { Label } from '@/components/_ui/label'
 import { Modal } from '@/components/_ui/modal'
 import { toast } from '@/components/_ui/toast'
 import { CurrencyInput } from '@/components/currency/Input'
-import { employeeStore } from '@/hooks/useEmployees'
-import { paymentStore } from '@/hooks/usePayments'
+import { employeeStore } from '@/stores/employee'
+import { staffPaymentStore } from '@/stores/staffPayment'
 import { cn, formatCurrency } from '@/lib/utils'
 import type { Employee } from '@/types'
 import { AnimatePresence, m } from 'framer-motion'
 import { Plus, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 export function Component() {
-  const payments = paymentStore.useStore((state) => state.payments)
+  const payments = staffPaymentStore.useStore((state) => state.payments)
   const employees = employeeStore.useStore((state) => state.employees)
-  const todayPayments = paymentStore.useStore((state) => state.today)
+  const todayStr = useToday()
+  const todayPayments = useMemo(() => {
+    const current = staffPaymentsInRange(payments, { day: todayStr })
+    return { paymentId: current.map((p) => p.id), total: staffPaymentsTotal(payments, { day: todayStr }) }
+  }, [payments, todayStr])
 
   const [employee, setEmployee] = useState<Employee | null>(null)
   const [customAmount, setCustomAmount] = useState(0)
@@ -35,8 +44,8 @@ export function Component() {
       return
     }
 
-    paymentStore.action.add({
-      date: new Date().toISOString(),
+    addStaffPayment({
+      date: todayStr,
       amount,
       receiver: { id: employee.id, type: 'employee' },
     })
@@ -54,8 +63,8 @@ export function Component() {
       return
     }
 
-    paymentStore.action.add({
-      date: new Date().toISOString(),
+    addStaffPayment({
+      date: todayStr,
       amount: customAmount,
       receiver: { id: employee.id, type: 'employee' },
     })
@@ -72,7 +81,7 @@ export function Component() {
       return
     }
 
-    employeeStore.action.add({
+    addEmployee({
       name: newName.trim(),
       defaultRates: [newRate1, newRate2],
     })
@@ -83,8 +92,7 @@ export function Component() {
     setNewRate2(0)
   }
 
-  const todayStr = new Date().toISOString().split('T')[0]
-  const otherPayments = payments.filter((p) => !p.date.startsWith(todayStr))
+  const otherPayments = payments.filter((p) => !isSameDay(p.date, todayStr))
 
   return (
     <>
@@ -206,7 +214,7 @@ export function Component() {
                 variant='error'
                 appearance='outline'
                 onConfirm={() => {
-                  employeeStore.action.delete(employee.id)
+                  deleteEmployee(employee.id)
                   setEmployee(null)
                   toast.info('Funcionário removido')
                 }}
@@ -257,7 +265,7 @@ export function Component() {
           <Card.Title className='mb-3'>HOJE</Card.Title>
           <Card className='overflow-hidden divide-y divide-base-300 p-0'>
             {todayPayments.paymentId.map((paymentId) => {
-              const payment = paymentStore.action.get(paymentId)
+              const payment = staffPaymentStore.action.get(paymentId)
 
               if (!payment?.receiver?.id) {
                 return null
@@ -287,7 +295,7 @@ export function Component() {
                       variant='error'
                       appearance='soft'
                       onConfirm={() => {
-                        paymentStore.action.delete(payment.id)
+                        deleteStaffPayment(payment.id)
                         toast.info('Diária removida')
                       }}
                     >
@@ -325,9 +333,7 @@ export function Component() {
 
                     <div>
                       <p className='text-sm font-semibold'>{emp.name}</p>
-                      <p className='text-xs text-base-content/60'>
-                        {new Date(payment.date).toLocaleDateString('pt-BR')}
-                      </p>
+                      <p className='text-xs text-base-content/60'>{formatDate(payment.date)}</p>
                     </div>
                   </div>
 

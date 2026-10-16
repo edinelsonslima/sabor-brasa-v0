@@ -1,11 +1,13 @@
+import { formatDate } from '@/lib/date'
+import { removeSale } from '@/services/sales'
 import { Title } from '@/components/_layout/title'
 import { Button } from '@/components/_ui/button'
 import { Card } from '@/components/_ui/card'
 import { toast } from '@/components/_ui/toast'
 import { SaleItem } from '@/components/sales/item'
-import { employeeStore } from '@/hooks/useEmployees'
-import { productStore } from '@/hooks/useProducts'
-import { saleStore } from '@/hooks/useSales'
+import { employeeStore } from '@/stores/employee'
+import { productStore } from '@/stores/product'
+import { saleStore } from '@/stores/sale'
 import { formatCurrency } from '@/lib/utils'
 import { m } from 'framer-motion'
 import { ArrowLeft, Package, Search as SearchIcon, User } from 'lucide-react'
@@ -28,7 +30,7 @@ export function Component() {
 
   const filteredSales = q
     ? sales.filter((s) => {
-        const dateMatch = new Date(s.closedAt).toLocaleDateString('pt-BR').includes(q)
+        const dateMatch = formatDate(s.closedAt).includes(q)
         const nameMatch = s.name.toLowerCase().includes(q)
         const productMatch = s.items.some((i) => i.name.toLowerCase().includes(q))
         const priceMatch = formatCurrency(s.total).toLowerCase().includes(q)
@@ -37,7 +39,7 @@ export function Component() {
     : []
 
   const handleDeleteSale = (id: string) => {
-    saleStore.action.delete(id)
+    removeSale(id)
     toast.success('Venda excluída')
   }
 

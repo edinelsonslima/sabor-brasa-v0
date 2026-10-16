@@ -1,79 +1,84 @@
-import { storage } from '@/lib/utils'
 import { useSyncExternalStore } from 'react'
 
-type SetterStateFn<T> = (state: T) => T
-
-interface Store<TState, TActions> {
-  createActions: (setState: (partialState: TState | SetterStateFn<TState>) => void, getState: () => TState) => TActions
-
-  createState: (setState: (partialState: TState | SetterStateFn<TState>) => void, getState: () => TState) => TState
-
+type Setter<T> = (value: T | ((state: T) => T)) => void
+interface Store<T, A> {
+  createActions: (set: Setter<T>, get: () => T) => A
+  createState: (set: Setter<T>, get: () => T) => T
   persist?: {
     key: Lowercase<string>
+    version?: number
+    migrate?: (data: unknown, version: number) => T
+    legacyKeys?: string[]
   }
 }
 
-export function createStore<
-  TState extends object | string | number | boolean,
-  TActions extends Record<string, (...args: never) => unknown>,
->({ createActions, createState, persist }: Store<TState, TActions>) {
-  const persistStorageKey: Lowercase<`${string}-${string}`> = `store-${persist?.key}`
-  const persistStorage = persist ? storage([persistStorageKey]) : null
+function immutable<T>(value: T): T {
+  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+    Object.values(value).forEach(immutable)
+    Object.freeze(value)
+  }
+  return value
+}
 
+export function createStore<T extends object | string | number | boolean, A>({
+  createActions,
+  createState,
+  persist,
+}: Store<T, A>) {
+  const key = `sabor-brasa-store-${persist?.key}`
   const listeners = new Set<() => void>()
-
-  let state: TState
-
-  const updateState = (value: TState) => {
-    state = value
-    persistStorage?.save(persistStorageKey, state)
-
+  let state: T
+  const save = () => {
+    if (persist) {
+      localStorage.setItem(
+        key,
+        JSON.stringify({
+          data: state,
+          version: persist.version ?? 1,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          expiresAt: null,
+        }),
+      )
+    }
+  }
+  const set: Setter<T> = (value) => {
+    state = immutable(structuredClone(typeof value === 'function' ? value(state) : value))
+    save()
     listeners.forEach((listener) => listener())
   }
-
-  const setState = (partialState: TState | SetterStateFn<TState>) => {
-    if (typeof partialState === 'function') {
-      updateState(partialState(state))
-      return
+  const get = () => state
+  const load = (): T | undefined => {
+    if (!persist) {
+      return undefined
     }
-
-    updateState(partialState)
+    const keys = [key, ...(persist.legacyKeys ?? []), `jhp-store-store-${persist.key}`, `jhp-store-${persist.key}`]
+    for (const candidate of keys) {
+      const raw = localStorage.getItem(candidate)
+      if (!raw) {
+        continue
+      }
+      try {
+        const parsed = JSON.parse(raw)
+        if (parsed.expiresAt && Date.now() > parsed.expiresAt) {
+          continue
+        }
+        const data = parsed.data ?? parsed
+        return persist.migrate ? persist.migrate(data, parsed.version ?? 0) : (data as T)
+      } catch {
+        /* Leave malformed legacy data intact and try other keys. */
+      }
+    }
+    return undefined
   }
-
-  const getState = () => {
-    return state
-  }
-
-  const loaded = persistStorage?.load<TState | undefined>(persistStorageKey, undefined)
-
-  state = loaded ?? createState(setState, getState)
-
-  /**
-   * Subscribes a listener to state changes. Returns an unsubscribe function.
-   * @param listener The listener function to be called on state changes.
-   * @returns A function to unsubscribe the listener.
-   */
+  state = immutable(structuredClone(load() ?? createState(set, get)))
+  save()
   const subscribe = (listener: () => void) => {
     listeners.add(listener)
-
     return () => {
       listeners.delete(listener)
     }
   }
-
-  /**
-   * Custom hook to access the store's state. Accepts a selector function to derive specific values from the state.
-   * @param selector A function that takes the current state and returns a derived value. This allows components to subscribe to specific parts of the state.
-   * @returns The selected value derived from the store's state. The component will re-render whenever the selected value changes due to state updates.
-   */
-  const useStore = <TValue>(selector: (currentState: TState) => TValue) => {
-    return useSyncExternalStore(subscribe, () => selector(state))
-  }
-
-  return {
-    subscribe,
-    useStore,
-    getState,
-    action: createActions(setState, getState),
-  } as const
+  const useStore = <V>(selector: (current: T) => V) => useSyncExternalStore(subscribe, () => selector(state))
+  return { subscribe, useStore, getState: get, action: createActions(set, get) } as const
 }

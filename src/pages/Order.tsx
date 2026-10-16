@@ -1,3 +1,5 @@
+import { addItem, setQty } from '@/services/comandas'
+import { itemsTotal, snapshotItems } from '@/lib/sales'
 import { Title } from '@/components/_layout/title'
 import { Button } from '@/components/_ui/button'
 import { Card } from '@/components/_ui/card'
@@ -5,13 +7,13 @@ import { toast } from '@/components/_ui/toast'
 import { CurrencyMonitor } from '@/components/currency/monitor'
 import { ProductItem } from '@/components/product/item'
 import { SaleCelebration } from '@/components/sales/celebration'
-import { productStore } from '@/hooks/useProducts'
+import { productStore } from '@/stores/product'
 import { cn, vibrate } from '@/lib/utils'
 import type { Product, ProductCategory } from '@/types'
 import { ChevronRightIcon, ReceiptTextIcon } from 'lucide-react'
 import { useRef } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { orderStore } from '@/hooks/useOrders'
+import { orderStore } from '@/stores/order'
 
 export function Component() {
   const params = useParams<{ id: string }>()
@@ -41,40 +43,15 @@ export function Component() {
       return
     }
 
-    const orderProducts = [...order.products]
-    const productIndex = orderProducts.findIndex((p) => p.productId === product.id)
-
-    if (productIndex === -1) {
-      const productToAdd = products.find((prd) => prd.id === product.id)
-
-      if (!productToAdd) {
-        toast.error('Produto não encontrado')
-        return
-      }
-
-      if (quantity <= 0) {
-        return
-      }
-
-      orderProducts.push({ productId: productToAdd.id, quantity })
-      orderStore.action.setProducts(order.id, orderProducts)
-      return
+    const previous = order.products.find((p) => p.productId === product.id)?.quantity ?? 0
+    const result =
+      quantity > previous ? addItem(order.id, product.id, quantity - previous) : setQty(order.id, product.id, quantity)
+    if (!result.ok) {
+      toast.error(result.reason)
     }
-
-    if (quantity <= 0) {
-      orderProducts.splice(productIndex, 1)
-      orderStore.action.setProducts(order.id, orderProducts)
-      return
-    }
-
-    orderProducts[productIndex].quantity = quantity
-    orderStore.action.setProducts(order.id, orderProducts)
   }
 
-  const totalOrder = (order?.products ?? []).reduce((acc, p) => {
-    const productPrice = productStore.action.get(p.productId)?.price ?? 0
-    return acc + productPrice * p.quantity
-  }, 0)
+  const totalOrder = itemsTotal(snapshotItems(order?.products ?? []))
 
   if (!order) {
     return (

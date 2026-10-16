@@ -2,11 +2,6 @@ export type PaymentMethod = 'pix' | 'dinheiro' | 'combinado'
 
 export type Module = 'sale' | 'stock' | 'payments' | 'manager' | 'audit' | 'admin'
 
-export interface Tenant {
-  id: string
-  name: string
-}
-
 export type ProductCategory = 'bebida' | 'comida'
 
 export interface Product {
@@ -21,16 +16,22 @@ export interface Product {
   averageCost: number
 }
 
-export interface OrderProduct {
-  productId: string
+export interface OrderItem {
+  name?: string
+  unitPrice?: number
+  unitCost?: number
+  note?: string
+  productId: string | null
   quantity: number
 }
+
+export type OrderProduct = OrderItem
 
 /** Comanda aberta. Ao fechar, vira uma `Sale` e sai do orderStore. */
 export interface Order {
   id: string
   name: string
-  products: OrderProduct[]
+  products: OrderItem[]
   openedAt: number
 }
 
@@ -62,7 +63,8 @@ export interface Employee {
   defaultRates: [number, number]
 }
 
-export interface Payment {
+export interface StaffPayment {
+  paidAt?: string
   id: string
   amount: number
   date: string

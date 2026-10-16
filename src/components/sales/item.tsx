@@ -1,5 +1,6 @@
-import { saleStore } from '@/hooks/useSales'
-import { formatCurrency, formatDateTime } from '@/lib/utils'
+import { saleStore } from '@/stores/sale'
+import { formatCurrency } from '@/lib/utils'
+import { formatDateTime } from '@/lib/date'
 import { Banknote, Pencil, Smartphone, Trash2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '../_ui/button'
@@ -22,10 +23,12 @@ export function SaleItem({ saleId, onDelete }: SaleItemProps) {
   return (
     <Collapse icon='arrow'>
       <Collapse.Summary>
-        <p className='text-sm font-semibold truncate min-w-0'>{sale.name} • {sale.items.reduce((a, i) => a + i.quantity, 0)} itens · {formatCurrency(sale.total)}</p>
+        <p className='text-sm font-semibold truncate min-w-0'>
+          {sale.name} • {sale.items.reduce((a, i) => a + i.quantity, 0)} itens · {formatCurrency(sale.total)}
+        </p>
 
         <div className='flex items-center justify-start gap-3 text-xs text-base-content/60 mt-1'>
-          <span>{formatDateTime(new Date(sale.closedAt).toISOString())}</span>
+          <span>{formatDateTime(sale.closedAt)}</span>
 
           {sale.cash > 0 && (
             <span className='flex items-center gap-1'>

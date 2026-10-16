@@ -1,3 +1,4 @@
+import { localDateKey, todayKey } from '@/lib/date'
 import { CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from './_ui/button'
@@ -21,10 +22,7 @@ interface Props {
 }
 
 export function Calendar({ onSelect, highlight, onViewChange }: Props) {
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const d = new Date()
-    return d.toISOString().split('T')[0]
-  })
+  const [selectedDate, setSelectedDate] = useState(todayKey)
 
   const [viewMonth, setViewMonth] = useState(() => {
     const d = new Date()
@@ -58,10 +56,7 @@ export function Calendar({ onSelect, highlight, onViewChange }: Props) {
   }
 
   const selectDay = (day: number) => {
-    const m = (viewMonth.month + 1).toString().padStart(2, '0')
-    const d = day.toString().padStart(2, '0')
-    const date = `${viewMonth.year}-${m}-${d}`
-    setSelectedDate(date)
+    setSelectedDate(localDateKey(new Date(viewMonth.year, viewMonth.month, day)))
   }
 
   const firstDayOfWeek = new Date(viewMonth.year, viewMonth.month, 1).getDay()

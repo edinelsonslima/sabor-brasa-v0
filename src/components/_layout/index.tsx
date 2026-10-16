@@ -1,4 +1,4 @@
-import { authStore } from '@/hooks/useAuth'
+import { authStore } from '@/stores/auth'
 import { useMatchMedia } from '@/hooks/useMatchMedia'
 import { themeStore } from '@/hooks/useTheme'
 import type { PropsWithChildren } from 'react'

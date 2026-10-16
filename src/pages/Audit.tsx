@@ -1,7 +1,8 @@
+import { formatDateTime } from '@/lib/date'
 import { Title } from '@/components/_layout/title'
 import { Badge } from '@/components/_ui/badge'
 import { Card } from '@/components/_ui/card'
-import { getAuditLog } from '@/lib/audit'
+import { auditStore } from '@/stores/audit'
 import { ClipboardList } from 'lucide-react'
 import type { ComponentProps, UIEvent } from 'react'
 import { useMemo, useState } from 'react'
@@ -33,7 +34,7 @@ const ACTION_LABELS: Record<string, ActionConfig> = {
 }
 
 export function Component() {
-  const entries = getAuditLog()
+  const entries = auditStore.useStore((state) => state)
   const [scrollTop, setScrollTop] = useState(0)
   const [limit, setLimit] = useState(INITIAL_BATCH)
 
@@ -93,7 +94,7 @@ export function Component() {
                     <div className='min-w-0 max-w-full overflow-x-auto overflow-y-hidden'>
                       <p className='text-sm whitespace-nowrap'>{entry.details}</p>
                       <p className='text-xs text-base-content/60 mt-0.5'>
-                        {entry.userName} • {new Date(entry.timestamp).toLocaleString('pt-BR')}
+                        {entry.userName} • {formatDateTime(entry.timestamp)}
                       </p>
                     </div>
                   </div>
