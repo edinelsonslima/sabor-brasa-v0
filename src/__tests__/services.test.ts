@@ -18,8 +18,12 @@ function product(stock = 10, price = 10) {
 }
 
 beforeEach(() => {
-  for (const p of productStore.getState()) productStore.action.delete(p.id)
-  for (const o of orderStore.getState()) orderStore.action.delete(o.id)
+  for (const p of productStore.getState()) {
+    productStore.action.delete(p.id)
+  }
+  for (const o of orderStore.getState()) {
+    orderStore.action.delete(o.id)
+  }
   saleStore.action.replaceAll([])
 })
 
