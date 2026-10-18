@@ -6,9 +6,6 @@ interface Store<T, A> {
   createState: (set: Setter<T>, get: () => T) => T
   persist?: {
     key: Lowercase<string>
-    version?: number
-    migrate?: (data: unknown, version: number) => T
-    legacyKeys?: string[]
   }
 }
 
@@ -30,20 +27,27 @@ export function createStore<T extends object | string | number | boolean, A>({
   let state: T
   const save = () => {
     if (persist) {
-      localStorage.setItem(
-        key,
-        JSON.stringify({
-          data: state,
-          version: persist.version ?? 1,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-          expiresAt: null,
-        }),
-      )
+      localStorage.setItem(key, JSON.stringify(state))
     }
   }
   const set: Setter<T> = (value) => {
     state = immutable(structuredClone(typeof value === 'function' ? value(state) : value))
+    save()
+    listeners.forEach((listener) => listener())
+  }
+  const get = () => state
+  const load = (): T | undefined => {
+    const raw = persist ? localStorage.getItem(key) : null
+    if (!raw) {
+      return undefined
+    }
+    try {
+      return JSON.parse(raw) as T
+    } catch {
+      return undefined
+    }
+  }
+  state = immutable(structuredClone(typeof value === 'function' ? value(state) : value))
     save()
     listeners.forEach((listener) => listener())
   }
