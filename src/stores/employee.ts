@@ -4,7 +4,7 @@ import { generateUUID } from '@/lib/utils'
 import type { Employee } from '@/types'
 type Create = Omit<Employee, 'id'>
 export const employeeStore = createStore({
-  persist: { key: 'employees', version: 2 },
+  persist: { key: 'employees' },
   createState: (): { employees: Employee[] } => ({ employees: [] }),
   createActions: (set, get) => ({
     get: (id: string) => get().employees.find((p) => p.id === id),

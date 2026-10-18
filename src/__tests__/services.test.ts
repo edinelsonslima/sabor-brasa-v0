@@ -9,7 +9,6 @@ import { addItem, close, createOpen, deleteOpen, reopen } from '@/services/coman
 import { addStockEntry, deleteStockEntry } from '@/services/purchases'
 import { editSale, removeSale } from '@/services/sales'
 import { snapshotItems } from '@/lib/sales'
-import { convertLegacySale } from '@/lib/migrations'
 import { hashPassword, verifyPassword } from '@/services/auth'
 
 const stockOf = (id: string) => productStore.action.get(id)?.stock
@@ -113,13 +112,6 @@ describe('G: removed product snapshots', () => {
     const [item] = snapshotItems([{ productId: 'gone', name: 'X', unitPrice: 12, unitCost: 4, quantity: 1 }])
     expect(item.unitPrice).toBe(12)
     expect(item.productId).toBeNull()
-  })
-  it('legacy sale with removed product derives price from total', () => {
-    const sale = convertLegacySale(
-      { id: 's', price: { total: 30 }, products: { regular: [{ id: 'gone', quantity: 3 }] } },
-      () => undefined,
-    )
-    expect(sale.items[0].unitPrice).toBe(10)
   })
 })
 

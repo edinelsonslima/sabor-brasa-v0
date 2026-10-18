@@ -3,17 +3,7 @@ import { generateUUID } from '@/lib/utils'
 import type { Product } from '@/types'
 type CreateProduct = Omit<Product, 'id' | 'averageCost'> & { averageCost?: number }
 export const productStore = createStore({
-  persist: {
-    key: 'products',
-    version: 2,
-    migrate: (data: unknown) =>
-      (data as Product[]).map((p) => ({
-        ...p,
-        category: p.category ?? 'bebida',
-        stock: p.stock ?? 0,
-        averageCost: p.averageCost ?? 0,
-      })),
-  },
+  persist: { key: 'products' },
   createState: (): Product[] => [],
   createActions: (set, get) => ({
     get: (id: string) => get().find((p) => p.id === id),

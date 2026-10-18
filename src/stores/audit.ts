@@ -8,7 +8,7 @@ export interface AuditEntry {
   timestamp: number
 }
 export const auditStore = createStore({
-  persist: { key: 'audit', version: 2, legacyKeys: ['sabor-brasa-audit-log', 'jhp-store-audit-log', 'jhp-audit-log'] },
+  persist: { key: 'audit' },
   createState: (): AuditEntry[] => [],
   createActions: (set, get) => ({
     add: (entry: AuditEntry) => {

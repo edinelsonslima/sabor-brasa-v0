@@ -3,11 +3,7 @@ import { generateUUID } from '@/lib/utils'
 import type { Sale } from '@/types'
 export type CreateSale = Omit<Sale, 'id'>
 export const saleStore = createStore({
-  persist: {
-    key: 'sales',
-    version: 2,
-    migrate: (data: unknown) => ({ sales: (data as { sales: Sale[] }).sales ?? [] }),
-  },
+  persist: { key: 'sales' },
   createState: (): { sales: Sale[] } => ({ sales: [] }),
   createActions: (set, get) => ({
     get: (id: string) => get().sales.find((s) => s.id === id),

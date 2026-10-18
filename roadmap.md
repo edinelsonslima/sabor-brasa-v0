@@ -1,9 +1,9 @@
 # Roadmap — Sabor & Brasa
 
 ## Current state
-- Client-only PWA; all data in localStorage via versioned `createStore` envelopes (`sabor-brasa-store-*`, legacy `jhp-store-*` fallback).
-- Layout: `src/stores` (raw persisted CRUD), `src/services` (inventory, comandas, sales, purchases, records, auth, audit), `src/selectors/finance.ts` (pure derived totals), `src/lib/date.ts` (only Date→string), `src/lib/migrations.ts` (legacy sales/closed orders → `Sale`).
-- Auth: salted SHA-256 (`crypto.subtle`); plaintext passwords upgraded on first login.
+- Client-only PWA; all data in localStorage via `createStore` (`sabor-brasa-store-<key>`).
+- Layout: `src/stores` (raw persisted CRUD), `src/services` (inventory, comandas, sales, purchases, records, auth, audit), `src/selectors/finance.ts` (pure derived totals), `src/lib/date.ts` (only Date→string).
+- Auth: salted SHA-256 (`crypto.subtle`).
 
 ## Stock policy
 - Adding to a comanda reserves stock; editing/removing/deleting a comanda releases it.

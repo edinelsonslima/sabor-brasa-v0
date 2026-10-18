@@ -1,5 +1,4 @@
 import { authStore, ALL_MODULES } from '@/stores/auth'
-import type { AppUser } from '@/stores/auth'
 import { generateUUID } from '@/lib/utils'
 import { logAudit } from './audit'
 
@@ -14,13 +13,9 @@ export async function hashPassword(password: string, salt = generateUUID()): Pro
   return `${HASH_PREFIX}${salt}$${toHex(digest)}`
 }
 
-export function isHashed(stored: string) {
-  return stored.startsWith(HASH_PREFIX)
-}
-
 export async function verifyPassword(password: string, stored: string): Promise<boolean> {
-  if (!isHashed(stored)) {
-    return stored === password
+  if (!stored.startsWith(HASH_PREFIX)) {
+    return false
   }
   const [, salt] = stored.split('$')
   return (await hashPassword(password, salt)) === stored
@@ -34,13 +29,7 @@ export async function login(email: string, password: string): Promise<string | n
   if (!(await verifyPassword(password, user.password))) {
     return 'Senha incorreta'
   }
-  let current: AppUser = user
-  if (!isHashed(user.password)) {
-    // Legacy plaintext password: upgrade on first successful login.
-    authStore.action.update(user.id, { password: await hashPassword(password) })
-    current = authStore.getState().users.find((u) => u.id === user.id) ?? user
-  }
-  authStore.action.setUser(current)
+  authStore.action.setUser(user)
   logAudit('login', `Login realizado: ${user.name} (${user.email})`)
   return null
 }
