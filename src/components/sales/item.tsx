@@ -1,3 +1,4 @@
+import { itemCountLabel } from '@/lib/sales'
 import { saleStore } from '@/stores/sale'
 import { formatCurrency } from '@/lib/utils'
 import { formatDateTime } from '@/lib/date'
@@ -24,7 +25,7 @@ export function SaleItem({ saleId, onDelete }: SaleItemProps) {
     <Collapse icon='arrow'>
       <Collapse.Summary>
         <p className='text-sm font-semibold truncate min-w-0'>
-          {sale.name} • {sale.items.reduce((a, i) => a + i.quantity, 0)} itens · {formatCurrency(sale.total)}
+          {sale.name} • {itemCountLabel(sale.items)} · {formatCurrency(sale.total)}
         </p>
 
         <div className='flex items-center justify-start gap-3 text-xs text-base-content/60 mt-1'>

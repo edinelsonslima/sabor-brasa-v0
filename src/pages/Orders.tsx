@@ -1,6 +1,6 @@
 import { formatDateTime, formatTime } from '@/lib/date'
 import { createOpen } from '@/services/comandas'
-import { itemsTotal, snapshotItems } from '@/lib/sales'
+import { itemCountLabel, itemsTotal, snapshotItems } from '@/lib/sales'
 import { Title } from '@/components/_layout/title'
 import { Button } from '@/components/_ui/button'
 import { Card } from '@/components/_ui/card'
@@ -80,7 +80,7 @@ export function Component() {
 
                 <div className='flex items-center'>
                   <p className='text-xs text-base-content/60'>
-                    {order.products.length} itens · aberta às {formatTime(order.openedAt)}
+                    {itemCountLabel(order.products)} · aberta às {formatTime(order.openedAt)}
                   </p>
                   <ChevronRight size={18} className='opacity-40' />
                 </div>

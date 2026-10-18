@@ -1,3 +1,4 @@
+import { itemCountLabel } from '@/lib/sales'
 import { addItem, setQty } from '@/services/comandas'
 import { itemsTotal, snapshotItems } from '@/lib/sales'
 import { Title } from '@/components/_layout/title'
@@ -120,9 +121,7 @@ export function Component() {
       >
         <span className='flex items-center gap-2'>
           <ReceiptTextIcon size={16} />
-          <span>
-            {order.products.length} {order.products.length === 1 ? 'item' : 'itens'}
-          </span>
+          <span>{itemCountLabel(order.products)}</span>
         </span>
 
         <span className='flex items-center gap-2'>

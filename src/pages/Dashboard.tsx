@@ -1,5 +1,5 @@
 import { formatDate } from '@/lib/date'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useToday } from '@/hooks/useToday'
 import { salesInRange, salesTotals, staffPaymentsTotal, expensesTotal, margin, netCash } from '@/selectors/finance'
 import { removeSale } from '@/services/sales'
@@ -54,9 +54,8 @@ export function Component() {
     monthNet,
   } = stats
 
+  const [hour] = useState(() => new Date().getHours())
   const getGreeting = () => {
-    const hour = new Date().getHours()
-
     if (hour < 12) {
       return 'Bom dia'
     }
@@ -77,7 +76,7 @@ export function Component() {
     <>
       <Title
         title={`${getGreeting()}, ${user?.name?.split(' ')[0] ?? ''}!`}
-        subtitle={`Resumo do dia ${formatDate(Date.now())}`}
+        subtitle={`Resumo do dia ${formatDate(day)}`}
       />
 
       <Card appearance='ghost'>
