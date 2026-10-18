@@ -10,7 +10,6 @@ export function Desktop({ children }: PropsWithChildren) {
 //     <div className="p-6 border-b border-sidebar-border flex items-center justify-between">
 //       <div>
 // <h1 className="text-xl font-extrabold tracking-tight">
-//   <span className="text-sidebar-primary">JHP</span> Produtos
 // </h1>
 //         <p className="text-xs text-sidebar-foreground/60 mt-1">
 //           Gestão de Vendas
@@ -93,7 +92,6 @@ export function Desktop({ children }: PropsWithChildren) {
 //   {/* Mobile Header */}
 //   <header className="md:hidden flex items-center justify-between px-4 py-3 bg-sidebar text-sidebar-foreground sticky top-0 z-50">
 // <h1 className="text-lg font-extrabold">
-//   <span className="daisy-">JHP</span> <span className="">Produtos</span>
 // </h1>
 //     {/* <div className="daisy-dropdown daisy-dropdown-end">
 //       <div

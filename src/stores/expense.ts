@@ -1,16 +1,9 @@
 import { createStore } from '@/hooks/useStore'
 import { generateUUID } from '@/lib/utils'
-import { localDateKey } from '@/lib/date'
 import type { Expense } from '@/types'
 type Create = Omit<Expense, 'id' | 'timestamp'>
 export const expenseStore = createStore({
-  persist: {
-    key: 'expenses',
-    version: 2,
-    migrate: (data: unknown) => ({
-      expenses: (data as { expenses: Expense[] }).expenses.map((p) => ({ ...p, date: localDateKey(p.date) })),
-    }),
-  },
+  persist: { key: 'expenses' },
   createState: (): { expenses: Expense[] } => ({ expenses: [] }),
   createActions: (set, get) => ({
     get: (id: string) => get().expenses.find((p) => p.id === id),

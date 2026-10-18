@@ -11,15 +11,7 @@ export interface AppUser {
 export const ALL_MODULES: Module[] = ['sale', 'stock', 'payments', 'manager', 'audit', 'admin']
 type State = { user: AppUser | null; users: AppUser[] }
 export const authStore = createStore({
-  persist: {
-    key: 'auth',
-    version: 2,
-    migrate: (data: unknown): State => {
-      const state = data as State
-      const migrateUser = (u: AppUser) => ({ ...u, modules: u.modules ?? [...ALL_MODULES] })
-      return { users: (state.users ?? []).map(migrateUser), user: state.user ? migrateUser(state.user) : null }
-    },
-  },
+  persist: { key: 'auth' },
   createState: (): State => ({ user: null, users: [] }),
   createActions: (set, get) => ({
     getCurrentUser: () => get().user,

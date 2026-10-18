@@ -2,7 +2,7 @@ import { createStore } from '@/hooks/useStore'
 import { generateUUID } from '@/lib/utils'
 import type { Order, OrderItem } from '@/types'
 export const orderStore = createStore({
-  persist: { key: 'orders', version: 2 },
+  persist: { key: 'orders' },
   createState: (): Order[] => [],
   createActions: (set, get) => ({
     get: (id: string) => get().find((o) => o.id === id),
