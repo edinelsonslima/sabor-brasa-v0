@@ -121,9 +121,7 @@ export function Component() {
       >
         <span className='flex items-center gap-2'>
           <ReceiptTextIcon size={16} />
-          <span>
-            {itemCountLabel(order.products)}
-          </span>
+          <span>{itemCountLabel(order.products)}</span>
         </span>
 
         <span className='flex items-center gap-2'>

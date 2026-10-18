@@ -41,7 +41,11 @@ export function ProductItem({ product, quantity = 0, className, onSelect, ...pro
         <div
           className={cn(
             'daisy-badge daisy-badge-sm daisy-badge-soft font-bold whitespace-nowrap absolute top-2 right-2',
-            (product.stock ?? 0) <= 0 ? 'daisy-badge-error' : (product.stock ?? 0) <= LOW_STOCK ? 'daisy-badge-warning' : 'daisy-badge-success',
+            (product.stock ?? 0) <= 0
+              ? 'daisy-badge-error'
+              : (product.stock ?? 0) <= LOW_STOCK
+                ? 'daisy-badge-warning'
+                : 'daisy-badge-success',
           )}
         >
           {product.stock ?? '-'} <PackageIcon size={16} />
