@@ -80,7 +80,7 @@ export function Component() {
 
                 <div className='flex items-center'>
                   <p className='text-xs text-base-content/60'>
-                    {order.products.length} itens · aberta às {formatTime(order.openedAt)}
+                    {itemCountLabel(order.products)} · aberta às {formatTime(order.openedAt)}
                   </p>
                   <ChevronRight size={18} className='opacity-40' />
                 </div>

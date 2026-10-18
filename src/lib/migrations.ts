@@ -3,6 +3,7 @@ import { orderStore } from '@/stores/order'
 import { saleStore } from '@/stores/sale'
 import type { PaymentMethod, Sale, SaleItem } from '@/types'
 import { snapshotItems } from './sales'
+import { localDateKey } from './date'
 
 type LegacyOrder = {
   id: string
@@ -35,7 +36,6 @@ type LegacySale = {
 export function runMigrations() {
   migrateLegacySales()
   migrateClosedOrders()
-  saleStore.action.refreshStats()
 }
 
 function migrateLegacySales() {
@@ -72,7 +72,13 @@ function migrateClosedOrders() {
       pix: order.price?.pix ?? (method === 'pix' ? total : 0),
       closedAt: order.closedAt ?? order.openedAt,
     })
-    orderStore.action.delete(order.id, { silent: true })
+    for (const item of items) {
+      const product = item.productId ? productStore.action.get(item.productId) : undefined
+      if (product) {
+        productStore.action.setStock(product.id, Math.max(0, (product.stock ?? 0) - item.quantity))
+      }
+    }
+    orderStore.action.delete(order.id)
   }
 }
 
@@ -86,7 +92,7 @@ export function convertLegacySale(
       return {
         productId: product ? p.id : null,
         name: product?.name ?? 'Produto removido',
-        unitPrice: product?.price ?? 0,
+        unitPrice: product?.price ?? NaN,
         unitCost: 0,
         quantity: p.quantity,
       }
@@ -99,7 +105,16 @@ export function convertLegacySale(
       quantity: p.quantity,
     })),
   ]
-  const total = s.price?.total ?? 0
+  const known = items.filter((i) => Number.isFinite(i.unitPrice)).reduce((a, i) => a + i.unitPrice * i.quantity, 0)
+  const unknownQty = items.filter((i) => !Number.isFinite(i.unitPrice)).reduce((a, i) => a + i.quantity, 0)
+  const total = s.price?.total ?? known
+  // Removed products get their share of the recorded total instead of a zero price.
+  const fallback = unknownQty > 0 ? Math.max(0, total - known) / unknownQty : 0
+  for (const item of items) {
+    if (!Number.isFinite(item.unitPrice)) {
+      item.unitPrice = fallback
+    }
+  }
   const method = s.paymentMethod ?? 'dinheiro'
 
   return {
@@ -111,6 +126,6 @@ export function convertLegacySale(
     total,
     cash: s.price?.cash ?? (method === 'dinheiro' ? total : 0),
     pix: s.price?.pix ?? (method === 'pix' ? total : 0),
-    closedAt: s.timestamp ?? (s.date ? new Date(s.date).getTime() : Date.now()),
+    closedAt: s.timestamp ?? (s.date ? new Date(`${localDateKey(s.date)}T12:00:00`).getTime() : Date.now()),
   }
 }
