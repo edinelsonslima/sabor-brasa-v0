@@ -1,4 +1,5 @@
 import { cn, formatCurrency, vibrate } from '@/lib/utils'
+import { LOW_STOCK } from '@/lib/sales'
 import type { Product } from '@/types'
 import { MinusIcon, PackageIcon, PlusIcon } from 'lucide-react'
 import type { ComponentProps } from 'react'

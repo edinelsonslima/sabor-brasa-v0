@@ -1,6 +1,6 @@
 import { formatDateTime, formatTime } from '@/lib/date'
 import { createOpen } from '@/services/comandas'
-import { itemsTotal, snapshotItems } from '@/lib/sales'
+import { itemCountLabel, itemsTotal, snapshotItems } from '@/lib/sales'
 import { Title } from '@/components/_layout/title'
 import { Button } from '@/components/_ui/button'
 import { Card } from '@/components/_ui/card'

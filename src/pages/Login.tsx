@@ -31,7 +31,7 @@ export function Component() {
         return toast.error('Senha deve ter ao menos 4 caracteres')
       }
 
-      const err = register(name.trim(), email.trim().toLowerCase(), password)
+      const err = await register(name.trim(), email.trim().toLowerCase(), password)
 
       return err ? toast.error(err) : toast.success('Conta criada com sucesso!')
     }
@@ -44,7 +44,7 @@ export function Component() {
       return toast.error('Informe um e-mail válido')
     }
 
-    const err = login(email.trim().toLowerCase(), password)
+    const err = await login(email.trim().toLowerCase(), password)
 
     return err ? toast.error(err) : toast.success('Bem-vindo de volta!')
   }

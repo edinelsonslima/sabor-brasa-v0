@@ -28,4 +28,12 @@ export function splitPayment(method: PaymentMethod, total: number, cash = 0, pix
   }
   return { cash, pix }
 }
+export const LOW_STOCK = 5
+export function itemCount(items: { quantity: number }[]) {
+  return items.reduce((acc, i) => acc + i.quantity, 0)
+}
+export function itemCountLabel(items: { quantity: number }[]) {
+  const n = itemCount(items)
+  return `${n} ${n === 1 ? 'item' : 'itens'}`
+}
 export type SalePayment = { paymentMethod: PaymentMethod; cash?: number; pix?: number }
