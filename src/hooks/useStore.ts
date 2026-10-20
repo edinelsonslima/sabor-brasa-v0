@@ -47,34 +47,6 @@ export function createStore<T extends object | string | number | boolean, A>({
       return undefined
     }
   }
-  state = immutable(structuredClone(typeof value === 'function' ? value(state) : value))
-    save()
-    listeners.forEach((listener) => listener())
-  }
-  const get = () => state
-  const load = (): T | undefined => {
-    if (!persist) {
-      return undefined
-    }
-    const keys = [key, ...(persist.legacyKeys ?? []), `jhp-store-store-${persist.key}`, `jhp-store-${persist.key}`]
-    for (const candidate of keys) {
-      const raw = localStorage.getItem(candidate)
-      if (!raw) {
-        continue
-      }
-      try {
-        const parsed = JSON.parse(raw)
-        if (parsed.expiresAt && Date.now() > parsed.expiresAt) {
-          continue
-        }
-        const data = parsed.data ?? parsed
-        return persist.migrate ? persist.migrate(data, parsed.version ?? 0) : (data as T)
-      } catch {
-        /* Leave malformed legacy data intact and try other keys. */
-      }
-    }
-    return undefined
-  }
   state = immutable(structuredClone(load() ?? createState(set, get)))
   save()
   const subscribe = (listener: () => void) => {
